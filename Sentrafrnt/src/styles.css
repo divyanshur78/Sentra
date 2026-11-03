@@ -10,3 +10,351 @@
 
 /* Role-specific demo credential login */
 .login-prefix-hint{float:right;color:#8d84e8;font-size:8px;letter-spacing:0;text-transform:none}.login-error{margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#fff0f2;color:#c65368;font-size:9px;line-height:1.5}.login-demo-credentials{display:grid;gap:5px;margin-top:15px;padding:11px 12px;border:1px solid #eceef5;border-radius:8px;background:#fafbfe;color:#758096;font-size:8px}.login-demo-credentials b{color:#46536a;font-size:9px;margin-bottom:2px}.login-demo-credentials span{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+
+/* SENTRA — Top navigation and readable typography */
+
+/* Move sidebar to the top */
+.sidebar {
+  position: sticky;
+  top: 0;
+  left: auto;
+  inset: auto;
+  width: 100%;
+  height: auto;
+  min-height: 76px;
+  padding: 12px 28px;
+  flex-direction: row;
+  align-items: center;
+  gap: 28px;
+  z-index: 50;
+  box-shadow: 0 3px 14px #17213b12;
+}
+
+.brand {
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.brand b {
+  font-size: 27px;
+  letter-spacing: -1px;
+}
+
+.workspace-label {
+  display: none;
+}
+
+.nav-list {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+}
+
+.nav-item {
+  height: 44px;
+  padding: 0 13px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.nav-icon {
+  font-size: 18px;
+}
+
+.nav-item em {
+  font-size: 11px;
+}
+
+.sidebar-bottom {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.secure-card,
+.help-link {
+  display: none;
+}
+
+.profile {
+  border-top: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.profile b {
+  font-size: 12px;
+}
+
+.profile small {
+  font-size: 11px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+.main-area {
+  margin-left: 0;
+  min-width: 0;
+}
+
+.topbar {
+  padding: 0 32px;
+}
+
+/* Improve general readability */
+.page-heading h1 {
+  font-size: 30px;
+}
+
+.page-heading p {
+  font-size: 14px;
+}
+
+.eyebrow {
+  font-size: 11px;
+}
+
+.panel-head h2,
+.assistant-top h2 {
+  font-size: 16px;
+}
+
+.panel-head p,
+.stat-top {
+  font-size: 13px;
+}
+
+.stat-value {
+  font-size: 28px;
+}
+
+th {
+  font-size: 11px;
+}
+
+td {
+  font-size: 12px;
+}
+
+.claim-cell b,
+.approval-name b,
+.rule-row b,
+.activity-row b {
+  font-size: 12px;
+}
+
+.claim-cell small,
+.activity-row small,
+.approval-name small {
+  font-size: 11px;
+}
+
+.chat-bubble {
+  font-size: 12px;
+}
+
+.chat-input input {
+  font-size: 12px;
+}
+
+.primary-button,
+.approve-button,
+.text-button {
+  font-size: 12px;
+}
+
+/* Mobile navigation */
+@media (max-width: 700px) {
+  .sidebar {
+    position: sticky;
+    width: 100%;
+    min-height: 68px;
+    padding: 10px 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    padding: 0;
+  }
+
+  .brand b {
+    font-size: 23px;
+  }
+
+  .nav-list {
+    order: 2;
+    width: 100%;
+    overflow-x: auto;
+    flex: none;
+    padding-bottom: 3px;
+  }
+
+  .nav-item {
+    flex-shrink: 0;
+    height: 40px;
+    font-size: 12px;
+  }
+
+  .sidebar-bottom {
+    margin-left: auto;
+  }
+
+  .profile {
+    display: none;
+  }
+
+  .main-area {
+    margin-left: 0;
+  }
+
+  .topbar {
+    padding: 0 14px;
+  }
+}
+
+/* Final Sentra navigation alignment */
+.sidebar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 24px;
+}
+
+.brand {
+  flex-shrink: 0;
+}
+
+.nav-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-bottom {
+  flex-shrink: 0;
+}
+
+.nav-item {
+  font-size: 14px;
+}
+
+@media (max-width: 950px) {
+  .sidebar {
+    gap: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .nav-item {
+    padding: 0 9px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  .sidebar {
+    flex-wrap: wrap;
+  }
+
+  .nav-list {
+    order: 2;
+    flex: 0 0 100%;
+  }
+}
+
+/* Increase readability of the white topbar */
+.topbar {
+  min-height: 82px;
+  height: 82px;
+  padding: 0 42px;
+}
+
+.breadcrumb {
+  font-size: 15px;
+  color: #7d8799;
+}
+
+.breadcrumb span {
+  padding: 0 14px;
+}
+
+.breadcrumb b {
+  font-size: 15px;
+  color: #263149;
+}
+
+.top-actions {
+  gap: 24px;
+}
+
+.system-status {
+  font-size: 13px;
+}
+
+.role-chip {
+  font-size: 12px;
+  padding: 9px 15px;
+}
+
+.logout-button {
+  font-size: 12px;
+  padding: 10px 15px;
+}
+
+.signed-in-label {
+  font-size: 12px;
+}
+
+.top-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .topbar {
+    min-height: 70px;
+    height: auto;
+    padding: 12px 14px;
+  }
+
+  .breadcrumb,
+  .breadcrumb b {
+    font-size: 13px;
+  }
+
+  .system-status {
+    font-size: 11px;
+  }
+}
+
+/* Red logout button */
+.logout-button {
+  color: #dc3545;
+  border-color: #f1c5ca;
+  background: #fff;
+}
+
+.logout-button:hover {
+  color: #fff;
+  background: #dc3545;
+  border-color: #dc3545;
+}
+
+.logout-mini {
+  color: #dc3545;
+  border-color: #f1c5ca;
+}
+
+.logout-mini:hover {
+  color: #fff;
+  background: #dc3545;
+  border-color: #dc3545;
+}
