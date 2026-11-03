@@ -358,3 +358,1049 @@ td {
   background: #dc3545;
   border-color: #dc3545;
 }
+/* =================================
+   SENTRA — EMERALD THEME
+================================= */
+
+:root {
+  --sentra-primary: #159879;
+  --sentra-primary-dark: #10765f;
+  --sentra-primary-light: #e0f4ed;
+  --sentra-sidebar: #102c29;
+  --sentra-background: #f3f8f6;
+  --sentra-text: #243b35;
+  --sentra-muted: #788e86;
+  --sentra-border: #e1ece7;
+}
+
+/* Main background */
+body {
+  background: var(--sentra-background);
+  color: var(--sentra-text);
+}
+
+/* Navigation */
+.sidebar {
+  background: var(--sentra-sidebar);
+  color: #ffffff;
+}
+
+.brand b {
+  color: #ffffff;
+}
+
+.brand-mark {
+  background: var(--sentra-primary);
+}
+
+.nav-item {
+  color: #c0d4cd;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+}
+
+.nav-item.active {
+  background: var(--sentra-primary);
+  color: #ffffff;
+}
+
+/* Main content */
+.main-area {
+  background: var(--sentra-background);
+}
+
+.topbar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--sentra-border);
+}
+
+/* Cards and panels */
+.card,
+.stat-card,
+.panel,
+.claim-card {
+  background: #ffffff;
+  border-color: var(--sentra-border);
+  color: var(--sentra-text);
+}
+
+/* Primary buttons */
+button.primary,
+.btn-primary,
+.submit-button,
+.new-claim-button {
+  background: var(--sentra-primary);
+  color: #ffffff;
+  border-color: var(--sentra-primary);
+}
+
+button.primary:hover,
+.btn-primary:hover,
+.submit-button:hover,
+.new-claim-button:hover {
+  background: var(--sentra-primary-dark);
+}
+
+/* Active states */
+.active,
+.selected {
+  border-color: var(--sentra-primary);
+}
+
+/* Links and highlights */
+a,
+.highlight,
+.accent {
+  color: var(--sentra-primary-dark);
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  border-color: var(--sentra-border);
+  background: #ffffff;
+  color: var(--sentra-text);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--sentra-primary);
+  box-shadow: 0 0 0 3px rgba(21,152,121,0.12);
+}
+
+/* Status labels */
+.status-approved {
+  background: #e0f4ed;
+  color: #10765f;
+}
+
+/* Logout remains red */
+.logout-button,
+.logout-mini {
+  color: #dc4545;
+  border-color: #f2caca;
+}
+
+.logout-button:hover,
+.logout-mini:hover {
+  background: #fff0f0;
+}
+
+/* Modal */
+.modal,
+.modal-content {
+  background: #ffffff;
+  border-color: var(--sentra-border);
+}
+
+/* =====================================================
+   SENTRA — COMPLETE EMERALD DESIGN SYSTEM
+   Applies across login, dashboard, claims, approvals,
+   red-team lab, audit, modals, forms and tables.
+===================================================== */
+
+:root {
+  --sentra-primary: #159879;
+  --sentra-primary-dark: #10765f;
+  --sentra-primary-light: #e0f4ed;
+  --sentra-primary-soft: #eff9f5;
+
+  --sentra-sidebar: #102c29;
+  --sentra-sidebar-hover: #19443c;
+
+  --sentra-background: #f3f8f6;
+  --sentra-surface: #ffffff;
+  --sentra-surface-alt: #f7fbf9;
+
+  --sentra-text: #243b35;
+  --sentra-heading: #183b32;
+  --sentra-muted: #788e86;
+
+  --sentra-border: #e1ece7;
+  --sentra-shadow: 0 4px 18px rgba(20, 65, 52, 0.06);
+
+  --sentra-danger: #dc4545;
+  --sentra-danger-bg: #fff0f0;
+  --sentra-warning: #b7791f;
+  --sentra-warning-bg: #fff7e6;
+  --sentra-success: #159879;
+  --sentra-success-bg: #e0f4ed;
+}
+
+/* ================= GLOBAL ================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--sentra-background) !important;
+  color: var(--sentra-text) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--sentra-heading);
+}
+
+p {
+  color: var(--sentra-muted);
+}
+
+::selection {
+  background: var(--sentra-primary-light);
+  color: var(--sentra-primary-dark);
+}
+
+/* ================= LOGIN PAGE ================= */
+
+.login-screen,
+.login-page,
+.login-container {
+  background:
+    radial-gradient(circle at 15% 20%, #d7f0e6 0, transparent 35%),
+    radial-gradient(circle at 85% 85%, #dcefe7 0, transparent 35%),
+    #f3f8f6 !important;
+}
+
+.login-card,
+.login-box,
+.login-panel {
+  background: #ffffff !important;
+  border: 1px solid var(--sentra-border) !important;
+  border-radius: 20px;
+  box-shadow: 0 18px 55px rgba(16, 65, 49, 0.10) !important;
+}
+
+.login-card h1,
+.login-box h1,
+.login-panel h1 {
+  color: var(--sentra-heading) !important;
+}
+
+.login-card p,
+.login-box p,
+.login-panel p {
+  color: var(--sentra-muted) !important;
+}
+
+.brand-mark {
+  background: var(--sentra-primary) !important;
+}
+
+.brand b {
+  color: #ffffff;
+}
+
+/* ================= TOP NAVIGATION ================= */
+
+.sidebar {
+  background: var(--sentra-sidebar) !important;
+  color: #ffffff !important;
+  border-color: #244b42 !important;
+}
+
+.workspace-label {
+  color: #9bbab0 !important;
+}
+
+.nav-item {
+  color: #c0d4cd !important;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  background: var(--sentra-sidebar-hover) !important;
+  color: #ffffff !important;
+}
+
+.nav-item.active {
+  background: var(--sentra-primary) !important;
+  color: #ffffff !important;
+}
+
+.nav-item em {
+  background: rgba(255,255,255,0.18);
+  color: #ffffff;
+}
+
+.secure-card {
+  background: #19443c !important;
+  border-color: #285a4e !important;
+  color: #ffffff !important;
+}
+
+.secure-card p {
+  color: #bdd5cc !important;
+}
+
+.secure-card span {
+  color: #9de2c8 !important;
+}
+
+/* ================= MAIN CONTENT ================= */
+
+.main-area,
+.page-content,
+.content-area {
+  background: var(--sentra-background) !important;
+}
+
+.topbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--sentra-border) !important;
+}
+
+.topbar h1,
+.page-title {
+  color: var(--sentra-heading) !important;
+}
+
+/* ================= CARDS & PANELS ================= */
+
+.card,
+.stat-card,
+.panel,
+.claim-card,
+.metric-card,
+.chart-card,
+.content-card {
+  background: var(--sentra-surface) !important;
+  border: 1px solid var(--sentra-border) !important;
+  color: var(--sentra-text) !important;
+  box-shadow: var(--sentra-shadow);
+  border-radius: 14px;
+}
+
+.card h2,
+.card h3,
+.panel h2,
+.panel h3,
+.stat-card h3 {
+  color: var(--sentra-heading) !important;
+}
+
+.stat-value,
+.metric-value {
+  color: var(--sentra-primary-dark) !important;
+}
+
+/* ================= BUTTONS ================= */
+
+button,
+.button {
+  transition: background 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, transform 0.2s ease;
+}
+
+button.primary,
+.btn-primary,
+.primary-button,
+.submit-button,
+.new-claim-button,
+button[type="submit"] {
+  background: var(--sentra-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--sentra-primary) !important;
+}
+
+button.primary:hover,
+.btn-primary:hover,
+.primary-button:hover,
+.submit-button:hover,
+.new-claim-button:hover,
+button[type="submit"]:hover {
+  background: var(--sentra-primary-dark) !important;
+  border-color: var(--sentra-primary-dark) !important;
+}
+
+button.secondary,
+.btn-secondary {
+  background: var(--sentra-primary-light) !important;
+  color: var(--sentra-primary-dark) !important;
+  border-color: #c5e8da !important;
+}
+
+button.secondary:hover,
+.btn-secondary:hover {
+  background: #ccecdf !important;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Logout remains red */
+
+.logout-button,
+.logout-mini {
+  color: var(--sentra-danger) !important;
+  border-color: #f2caca !important;
+  background: #ffffff !important;
+}
+
+.logout-button:hover,
+.logout-mini:hover {
+  background: var(--sentra-danger-bg) !important;
+}
+
+/* ================= FORMS & INPUTS ================= */
+
+input,
+select,
+textarea {
+  background: #ffffff !important;
+  color: var(--sentra-text) !important;
+  border: 1px solid var(--sentra-border) !important;
+  border-radius: 8px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9aada5 !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--sentra-primary) !important;
+  box-shadow: 0 0 0 3px rgba(21,152,121,0.13) !important;
+}
+
+label {
+  color: var(--sentra-text);
+}
+
+/* ================= TABLES ================= */
+
+table {
+  background: #ffffff;
+  border-color: var(--sentra-border);
+}
+
+th {
+  background: var(--sentra-surface-alt) !important;
+  color: var(--sentra-muted) !important;
+}
+
+td {
+  color: var(--sentra-text) !important;
+  border-color: var(--sentra-border) !important;
+}
+
+tr:hover td {
+  background: var(--sentra-primary-soft) !important;
+}
+
+/* ================= STATUS LABELS ================= */
+
+.status-approved,
+.status-success,
+.status-completed {
+  background: var(--sentra-success-bg) !important;
+  color: var(--sentra-primary-dark) !important;
+}
+
+.status-pending,
+.status-warning {
+  background: var(--sentra-warning-bg) !important;
+  color: var(--sentra-warning) !important;
+}
+
+.status-rejected,
+.status-blocked,
+.status-danger {
+  background: var(--sentra-danger-bg) !important;
+  color: var(--sentra-danger) !important;
+}
+
+/* ================= CLAIM DETAILS ================= */
+
+.claim-detail,
+.detail-panel,
+.claim-info {
+  background: #ffffff !important;
+  border-color: var(--sentra-border) !important;
+}
+
+.claim-detail h2,
+.detail-panel h2 {
+  color: var(--sentra-heading) !important;
+}
+
+/* ================= MODALS ================= */
+
+.modal-overlay {
+  background: rgba(11, 35, 29, 0.55) !important;
+  backdrop-filter: blur(4px);
+}
+
+.modal,
+.modal-content,
+.modal-card,
+.decision-modal {
+  background: #ffffff !important;
+  color: var(--sentra-text) !important;
+  border: 1px solid var(--sentra-border) !important;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(10, 45, 34, 0.18) !important;
+}
+
+.modal h2,
+.modal h3,
+.modal-content h2,
+.modal-content h3 {
+  color: var(--sentra-heading) !important;
+}
+
+/* ================= CHAT / ASSISTANT ================= */
+
+.chat-panel,
+.chat-container,
+.assistant-panel {
+  background: #ffffff !important;
+  border-color: var(--sentra-border) !important;
+}
+
+.chat-message.agent,
+.message-agent {
+  background: var(--sentra-primary-light) !important;
+  color: var(--sentra-primary-dark) !important;
+}
+
+.chat-message.you,
+.message-user {
+  background: var(--sentra-primary) !important;
+  color: #ffffff !important;
+}
+
+/* ================= RED TEAM LAB ================= */
+
+.attack-panel,
+.redteam-panel {
+  background: #ffffff !important;
+  border-color: var(--sentra-border) !important;
+}
+
+.attack-result,
+.rule-pass,
+.policy-pass {
+  background: var(--sentra-success-bg) !important;
+  color: var(--sentra-primary-dark) !important;
+}
+
+.rule-block,
+.policy-block {
+  background: var(--sentra-danger-bg) !important;
+  color: var(--sentra-danger) !important;
+}
+
+/* ================= AUDIT TIMELINE ================= */
+
+.audit-item,
+.timeline-item {
+  border-color: var(--sentra-border) !important;
+}
+
+.audit-dot,
+.timeline-dot {
+  background: var(--sentra-primary) !important;
+}
+
+/* ================= CHARTS & PROGRESS ================= */
+
+.progress-bar,
+.progress-fill {
+  background: var(--sentra-primary) !important;
+}
+
+.chart-legend,
+.chart-label {
+  color: var(--sentra-muted) !important;
+}
+
+/* ================= EMPTY STATES ================= */
+
+.empty-state,
+.empty-state-card {
+  background: #ffffff !important;
+  border: 1px dashed #b8d9cb !important;
+  color: var(--sentra-muted) !important;
+}
+
+.empty-state h3,
+.empty-state-card h3 {
+  color: var(--sentra-heading) !important;
+}
+
+/* ================= SCROLLBARS ================= */
+
+* {
+  scrollbar-color: #9bcdb9 #edf5f1;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #9bcdb9;
+  border-radius: 20px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #edf5f1;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+  .main-area {
+    margin-left: 0 !important;
+  }
+
+  .sidebar {
+    background: var(--sentra-sidebar) !important;
+  }
+
+  .card,
+  .stat-card,
+  .panel {
+    border-radius: 12px;
+  }
+}
+
+/* =====================================
+   MANAGER APPROVALS — EMERALD LAYOUT
+===================================== */
+
+.approvals-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 0 30px;
+}
+
+.approvals-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.approvals-heading h2 {
+  font-size: 25px;
+  font-weight: 700;
+  color: #183b32;
+  margin: 0 0 7px;
+}
+
+.approvals-heading p {
+  font-size: 14px;
+  color: #788e86;
+  margin: 0;
+}
+
+.approval-count {
+  font-size: 13px;
+  color: #10765f;
+  font-weight: 600;
+}
+
+.approvals-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e1ece7;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 18px rgba(20, 65, 52, 0.05);
+}
+
+.approvals-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.approvals-card-header h3 {
+  font-size: 19px;
+  color: #183b32;
+  margin: 0 0 5px;
+}
+
+.approvals-card-header p {
+  font-size: 13px;
+  margin: 0;
+  color: #788e86;
+}
+
+.approval-badge {
+  background: #e0f4ed;
+  color: #10765f;
+  padding: 7px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.approvals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.approval-row {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.5fr) minmax(130px, 0.8fr) auto auto;
+  align-items: center;
+  gap: 20px;
+  padding: 18px;
+  background: #f8fbf9;
+  border: 1px solid #e1ece7;
+  border-radius: 12px;
+}
+
+.approval-vendor {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.approval-vendor-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #e0f4ed;
+  color: #10765f;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.approval-vendor h4 {
+  margin: 0 0 6px;
+  color: #243b35;
+  font-size: 14px;
+}
+
+.approval-vendor p {
+  margin: 0;
+  color: #788e86;
+  font-size: 12px;
+}
+
+.approval-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.approval-amount small {
+  color: #788e86;
+  font-size: 11px;
+}
+
+.approval-amount strong {
+  color: #183b32;
+  font-size: 16px;
+}
+
+.approval-status {
+  background: #fff7e6;
+  color: #a66b12;
+  padding: 7px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.approval-review-btn {
+  background: #159879;
+  color: #ffffff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.approval-review-btn:hover {
+  background: #10765f;
+}
+
+.approvals-empty {
+  text-align: center;
+  padding: 45px 20px;
+  background: #f8fbf9;
+  border-radius: 12px;
+}
+
+.approvals-empty h3 {
+  color: #183b32;
+  margin-bottom: 8px;
+}
+
+.approvals-empty p {
+  color: #788e86;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .approval-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 550px) {
+  .approval-row {
+    grid-template-columns: 1fr;
+  }
+
+  .approvals-card {
+    padding: 16px;
+  }
+
+  .approvals-card-header {
+    align-items: flex-start;
+  }
+}
+
+/* =====================================
+   MANAGER DASHBOARD + SHARED AI ASSISTANT
+===================================== */
+
+.manager-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.95fr);
+  gap: 22px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.manager-content-grid .approvals-card {
+  min-width: 0;
+  height: 100%;
+}
+
+.manager-content-grid .assistant-panel {
+  min-width: 0;
+  min-height: 440px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.manager-content-grid .chat-area {
+  flex: 1;
+  min-height: 150px;
+  max-height: 310px;
+  overflow-y: auto;
+}
+
+.manager-chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 0;
+}
+
+.manager-chat-suggestions button {
+  background: #eff9f5;
+  color: #10765f;
+  border: 1px solid #ccecdf;
+  border-radius: 20px;
+  padding: 7px 10px;
+  font-size: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.manager-chat-suggestions button:hover {
+  background: #dcefe7;
+}
+
+/* =====================================
+   LOGIN — REMOVE PURPLE ACCENTS
+===================================== */
+
+.login-role {
+  border-color: #e1ece7 !important;
+  background: #ffffff !important;
+}
+
+.login-role:hover {
+  border-color: #9bcdb9 !important;
+  background: #f3f8f6 !important;
+}
+
+.login-role.selected {
+  background: #e0f4ed !important;
+  border-color: #159879 !important;
+  box-shadow: 0 0 0 1px #159879 !important;
+}
+
+.login-role.selected b,
+.login-role.selected i {
+  color: #10765f !important;
+}
+
+.login-role-icon {
+  background: #eff9f5 !important;
+  color: #159879 !important;
+}
+
+.login-role.selected .login-role-icon {
+  background: #159879 !important;
+  color: #ffffff !important;
+}
+
+.login-submit {
+  background: #159879 !important;
+  border-color: #159879 !important;
+  color: #ffffff !important;
+}
+
+.login-submit:hover {
+  background: #10765f !important;
+}
+
+/* Portal chip */
+.role-chip {
+  background: #e0f4ed !important;
+  color: #10765f !important;
+  border-color: #ccecdf !important;
+}
+
+/* Remove purple avatar appearance */
+.avatar-purple {
+  background: #d9f0e5 !important;
+  color: #10765f !important;
+}
+
+/* Responsive manager layout */
+@media (max-width: 1050px) {
+  .manager-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-content-grid .assistant-panel {
+    min-height: 400px;
+  }
+}
+/* Sentra: Emerald login role selection */
+.login-role.selected {
+  border-color: #159879 !important;
+  background: #e0f4ed !important;
+  color: #10765f !important;
+  box-shadow: 0 0 0 2px rgba(21, 152, 121, 0.15) !important;
+}
+
+.login-role.selected b,
+.login-role.selected i,
+.login-role.selected .login-role-icon {
+  color: #10765f !important;
+}
+
+.login-role:hover {
+  border-color: #159879 !important;
+}
+
+.login-role.selected i {
+  background: #159879 !important;
+  color: #ffffff !important;
+}
+/* Sentra AI assistant file upload */
+
+.chat-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-attach-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  border: 1px solid var(--sentra-border, #e1ece7);
+  border-radius: 10px;
+  color: #159879;
+  cursor: pointer;
+  font-size: 19px;
+}
+
+.chat-attach-button:hover {
+  background: #e0f4ed;
+}
+
+.chat-upload-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+}
+
+.chat-upload-file,
+.chat-file-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  background: #e0f4ed;
+  border: 1px solid #b9e3d5;
+  border-radius: 8px;
+  color: #10765f;
+  font-size: 12px;
+}
+
+.chat-upload-filename {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-upload-file button {
+  border: none;
+  background: transparent;
+  color: #10765f;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.chat-attached-files {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.chat-input button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

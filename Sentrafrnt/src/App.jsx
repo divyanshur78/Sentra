@@ -23,6 +23,7 @@ function App() {
   const [running, setRunning] = useState(false);
   const [toast, setToast] = useState('');
   const [chat, setChat] = useState('');
+  const [chatFiles, setChatFiles] = useState([]);
   const [chatMessages, setChatMessages] = useState([{ from: 'agent', text: 'Hi Aarav. Tell me what you need to claim, or upload your receipts to get started.' }]);
   const [decisionModal, setDecisionModal] = useState(null);
   const [decisionReason, setDecisionReason] = useState('');
@@ -36,7 +37,36 @@ function App() {
   ]);
 
   const showToast = message => { setToast(message); window.setTimeout(() => setToast(''), 2600); };
-  const login = (selectedRole, name) => { setRole(selectedRole); setUserName(name.trim() || (selectedRole === 'Employee' ? 'Aarav Mehta' : selectedRole === 'Manager' ? 'Priya Kapoor' : 'Judge')); setPage(selectedRole === 'Manager' ? 'approvals' : selectedRole === 'Judge' ? 'judge' : 'overview'); };
+  const login = (selectedRole, name) => {
+  const finalName = name.trim() || (
+    selectedRole === 'Employee'
+      ? 'Aarav Mehta'
+      : selectedRole === 'Manager'
+        ? 'Priya Kapoor'
+        : 'Judge'
+  );
+
+  setRole(selectedRole);
+  setUserName(finalName);
+
+  setPage(
+    selectedRole === 'Manager'
+      ? 'approvals'
+      : selectedRole === 'Judge'
+        ? 'judge'
+        : 'overview'
+  );
+
+  setChat('');
+  setChatMessages([
+    {
+      from: 'agent',
+      text: selectedRole === 'Manager'
+        ? `Hi ${finalName}. I can help you understand expense policies and review approval workflows.`
+        : `Hi ${finalName}. Tell me what you need to claim, or upload your receipts to get started.`
+    }
+  ]);
+};
   const logout = () => { setRole(null); setUserName(''); setDecisionModal(null); setPage('overview'); };
   const requestClaimDecision = (id, status) => { setDecisionReason(''); setDecisionModal({ kind: 'claim', id, status, title: status === 'Approved' ? 'Approve expense claim' : 'Reject expense claim' }); };
   const saveDecision = () => {
@@ -62,27 +92,45 @@ function App() {
     catch { setAttackResult({ decision: 'ERROR', reason: 'The red-team endpoint could not be reached.' }); }
     finally { setRunning(false); }
   };
-  const sendChat = () => {
-    if (!chat.trim()) return;
-    setChatMessages(old => [...old, { from: 'you', text: chat }, { from: 'agent', text: 'I’ve prepared a draft from your request. Upload the supporting receipts and review the extracted details before submission.' }]);
-    setChat('');
-  };
-  const createClaim = (formData) => {
+   
+const sendChat = () => {
+  if (!chat.trim() && chatFiles.length === 0) return;
+
+  const userMessage = chat.trim() || 'Please review these attached files.';
+  const fileNames = chatFiles.map(file => file.name);
+
+  const response = role === 'Manager'
+    ? 'Your files have been attached. Connect the assistant to the backend to analyse their contents and retrieve live claim information.'
+    : 'Your files have been attached. Connect the assistant to the backend to extract receipt details and prepare your expense claim.';
+
+  setChatMessages(old => [
+    ...old,
+    {
+      from: 'you',
+      text: userMessage,
+      files: fileNames
+    },
+    {
+      from: 'agent',
+      text: response
+    }
+  ]);
+
+  setChat('');
+  setChatFiles([]);
+};
+
+ const createClaim = (formData) => {
   const vendor = formData.vendor.trim();
   const amount = Number(formData.amount);
   const date = formData.date;
   const category = formData.category;
 
-  if (!vendor || !amount || amount <= 0 || !date || !formData.receipt) {
-    showToast('Please complete all required fields and attach a receipt.');
-    return;
-  }
-
   const duplicate = claims.some(
-    c =>
-      c.vendor?.toLowerCase() === vendor.toLowerCase() &&
-      Number(c.amount) === amount &&
-      c.date === date
+    claim =>
+      claim.vendor.toLowerCase() === vendor.toLowerCase() &&
+      Number(claim.amount) === amount &&
+      claim.date === date
   );
 
   let status = 'Submitted';
@@ -198,7 +246,19 @@ function App() {
       <header className="topbar"><div className="breadcrumb">Sentra <span>/</span> <b>{title}</b></div><div className="top-actions"><div className="system-status"><i></i> Demo workspace</div><span className="role-chip">{role}</span><button className="logout-button" onClick={logout}>Log out</button></div></header>
       <div className="page-wrap">
         <div className="page-heading"><div><div className="eyebrow">SENTRA · GOVERNED EXPENSECLAIM AGENT</div><h1>{title}<span className="heading-spark">✳</span></h1><p>{page === 'overview' ? 'A clear view of your expenses, approvals and policy activity.' : page === 'redteam' ? 'Test how the agent responds to adversarial instructions.' : page === 'approvals' ? 'Review claims that need a human decision.' : page === 'audit' ? 'A traceable record of every agent and policy action.' : page === 'judge' ? 'Evaluate the solution using a consistent pass/fail review matrix.' : 'Track, review and manage submitted expense claims.'}</p></div><div className="signed-in-label"><span className="online-dot"></span> Signed in as <b>{userName}</b></div></div>
-        {page === 'overview' && role === 'Employee' && <Overview claims={claims.filter(c => c.person === userName)} setPage={setPage} setSelected={setSelected} chatMessages={chatMessages} chat={chat} setChat={setChat} sendChat={sendChat} />}
+        {page === 'overview' && role === 'Employee' && (
+          <Overview
+            claims={claims.filter(c => c.person === userName)}
+            setPage={setPage}
+            setSelected={setSelected}
+            chatMessages={chatMessages}
+            chat={chat}
+            setChat={setChat}
+            sendChat={sendChat}
+            chatFiles={chatFiles}
+            setChatFiles={setChatFiles}
+          />
+        )}
         {page === 'claims' && (
           <Claims
             claims={role === 'Employee' ? claims.filter(c => c.person === userName) : claims}
@@ -206,7 +266,19 @@ function App() {
             onNewClaim={() => setNewClaimOpen(true)}
           />
         )}
-        {page === 'approvals' && role === 'Manager' && <Approvals claims={claims} approve={requestClaimDecision} setSelected={setSelected} />}
+        {page === 'approvals' && role === 'Manager' && (
+          <Approvals
+            claims={claims}
+            approve={requestClaimDecision}
+            setSelected={setSelected}
+            chatMessages={chatMessages}
+            chat={chat}
+            setChat={setChat}
+            sendChat={sendChat}
+            chatFiles={chatFiles}
+            setChatFiles={setChatFiles}
+          />
+        )}
         {page === 'judge' && role === 'Judge' && <JudgeMatrix scores={judgeScores} onDecision={openJudgeDecision} />}
         {page === 'redteam' && role === 'Judge' && <RedTeam prompt={prompt} setPrompt={setPrompt} runAttack={runAttack} running={running} result={attackResult} />}
         {page === 'audit' && role !== 'Employee' && <Audit />}
@@ -286,7 +358,158 @@ function DecisionModal({ modal, reason, setReason, onClose, onSave }) {
   return <div className="modal-backdrop" onClick={onClose}><div className="decision-modal" onClick={e => e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">{isJudge ? 'JUDGE EVALUATION' : 'MANAGER DECISION'}</span><h2>{modal.title}</h2></div><button onClick={onClose}>×</button></div><div className={`decision-banner ${positive ? 'positive' : 'negative'}`}><span>{positive ? '✓' : '×'}</span><div><b>{isJudge ? (positive ? 'Mark criterion as passed' : 'Mark criterion as failed') : (positive ? 'Approve this claim' : 'Reject this claim')}</b><small>{isJudge ? modal.id : `Claim ${modal.id}`}</small></div></div><label className="decision-label" htmlFor="decision-reason">REASON / JUSTIFICATION <span>REQUIRED</span></label><textarea id="decision-reason" className="decision-textarea" rows="5" value={reason} onChange={e => setReason(e.target.value)} placeholder={isJudge ? 'Explain what evidence supports this evaluation...' : 'Explain why this claim is approved or rejected...'} /><div className="decision-hint">This explanation will be displayed with the recorded decision in this demo.</div><div className="decision-modal-actions"><button className="outline-button" onClick={onClose}>Cancel</button><button className={positive ? 'approve-button' : 'reject-button'} disabled={!reason.trim()} onClick={onSave}>Save decision</button></div></div></div>;
 }
 
-function Overview({ claims, setPage, setSelected, chatMessages, chat, setChat, sendChat }) {
+function AssistantPanel({
+  chatMessages,
+  chat,
+  setChat,
+  sendChat,
+  role,
+  chatFiles = [],
+  setChatFiles = () => {}
+}) {
+  const managerPrompts = [
+    'Summarize pending approvals',
+    'Explain the ₹25,000 approval rule',
+    'What should I check before approving a claim?'
+  ];
+
+  const employeePrompts = [
+    'How do I submit an expense?',
+    'What receipts do I need?',
+    'Explain the expense policy'
+  ];
+
+  const suggestions = role === 'Manager'
+    ? managerPrompts
+    : employeePrompts;
+
+  return (
+    <div className="panel assistant-panel">
+      <div className="assistant-top">
+        <div className="assistant-orb">✳</div>
+
+        <div>
+          <span className="live-label">
+            <i></i> SENTRA AI ASSISTANT
+          </span>
+          <h2>{role === 'Manager' ? 'Manager companion' : 'Expense companion'}</h2>
+          <p>{role === 'Manager' ? 'Review. Decide. Stay informed.' : 'Ask. Upload. Review. Done.'}</p>
+        </div>
+
+        <span className="more">•••</span>
+      </div>
+
+      <div className="chat-area">
+        {chatMessages.slice(-5).map((message, index) => (
+          <div
+            key={index}
+            className={`chat-bubble ${message.from}`}
+          >
+            {message.from === 'agent' && (
+              <span className="bubble-spark">✳</span>
+            )}
+            {message.text}
+
+            {message.files?.length > 0 && (
+              <div className="chat-attached-files">
+                {message.files.map((file, index) => (
+                  <div className="chat-file-item" key={index}>
+                    <span>📎</span>
+                    <span>{file}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="manager-chat-suggestions">
+        {suggestions.map(suggestion => (
+          <button
+            type="button"
+            key={suggestion}
+            onClick={() => setChat(suggestion)}
+          >
+            {suggestion}
+          </button>
+        ))}
+      </div>
+
+      {chatFiles.length > 0 && (
+        <div className="chat-upload-preview">
+          {chatFiles.map((file, index) => (
+            <div className="chat-upload-file" key={`${file.name}-${index}`}>
+              <span>📎</span>
+              <span className="chat-upload-filename">{file.name}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setChatFiles(old => old.filter((_, i) => i !== index))
+                }
+                aria-label={`Remove ${file.name}`}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="chat-input">
+        <label className="chat-attach-button" title="Attach files">
+          📎
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            multiple
+            hidden
+            onChange={e => {
+              const selectedFiles = Array.from(e.target.files || []);
+              const validFiles = selectedFiles.filter(file => {
+                if (file.size > 10 * 1024 * 1024) {
+                  alert(`${file.name} exceeds the 10 MB limit.`);
+                  return false;
+                }
+                return true;
+              });
+
+              setChatFiles(old => [...old, ...validFiles]);
+              e.target.value = '';
+            }}
+          />
+        </label>
+
+        <input
+          value={chat}
+          onChange={e => setChat(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && sendChat()}
+          placeholder={
+            role === 'Manager'
+              ? 'Ask about claims or policies...'
+              : 'Describe an expense...'
+          }
+        />
+
+        <button
+          type="button"
+          onClick={sendChat}
+          disabled={!chat.trim() && chatFiles.length === 0}
+        >
+          ↑
+        </button>
+      </div>
+
+      <div className="assistant-hint">
+        {role === 'Manager'
+          ? 'Manager assistant · Demo responses'
+          : 'Expense assistant · Demo responses'}
+      </div>
+    </div>
+  );
+}
+
+function Overview({ claims, setPage, setSelected, chatMessages, chat, setChat, sendChat, chatFiles, setChatFiles }) {
   const pending = claims.filter(c => c.status === 'Needs approval').length;
   return <>
     <section className="stats-grid">
@@ -297,7 +520,15 @@ function Overview({ claims, setPage, setSelected, chatMessages, chat, setChat, s
     </section>
     <section className="overview-grid">
       <div className="panel claims-panel"><div className="panel-head"><div><h2>Recent claims</h2><p>Your latest expense activity</p></div><button className="text-button" onClick={() => setPage('claims')}>View all <span>→</span></button></div><div className="table-wrap"><table><thead><tr><th>CLAIM</th><th>DATE</th><th>AMOUNT</th><th>STATUS</th><th></th></tr></thead><tbody>{claims.slice(0, 4).map(c => <tr key={c.id} onClick={() => { setSelected(c); setPage('claims'); }}><td><div className="claim-cell"><div className="mini-icon">{c.category === 'Travel' ? '✈' : c.category === 'Meals' ? '♨' : '⌖'}</div><div><b>{c.purpose}</b><small>{c.id}</small></div></div></td><td>{c.date}</td><td className="amount">{money(c.amount)}</td><td><Status status={c.status} /></td><td className="arrow-cell">↗</td></tr>)}</tbody></table></div><div className="panel-foot"><span>Showing 4 of 12 claims</span><button onClick={() => setPage('claims')}>Open claims <span>→</span></button></div></div>
-      <div className="panel assistant-panel"><div className="assistant-top"><div className="assistant-orb">✳</div><div><span className="live-label"><i></i> SENTRA AI ASSISTANT</span><h2>Expense companion</h2><p>Ask. Upload. Review. Done.</p></div><span className="more">•••</span></div><div className="chat-area">{chatMessages.slice(-3).map((m,i) => <div key={i} className={`chat-bubble ${m.from}`}>{m.from === 'agent' && <span className="bubble-spark">✳</span>}{m.text}</div>)}</div><div className="chat-input"><input value={chat} onChange={e => setChat(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChat()} placeholder="Describe an expense..."/><button onClick={sendChat}>↑</button></div><div className="assistant-hint">Try: “Add my client dinner from yesterday”</div></div>
+      <AssistantPanel
+        chatMessages={chatMessages}
+        chat={chat}
+        setChat={setChat}
+        sendChat={sendChat}
+        role="Employee"
+        chatFiles={chatFiles}
+        setChatFiles={setChatFiles}
+/>
     </section>
     <section className="bottom-grid"><div className="panel"><div className="panel-head"><div><h2>Policy health</h2><p>Compliance overview · November 2026</p></div><span className="tiny-tag">LIVE</span></div><div className="health-content"><div className="donut"><div><b>98.6%</b><small>COMPLIANT</small></div></div><div className="health-legend"><div><i className="legend-dot green-dot"></i><span>Passed checks</span><b>142</b></div><div><i className="legend-dot amber-dot"></i><span>Escalated</span><b>08</b></div><div><i className="legend-dot red-dot"></i><span>Blocked</span><b>03</b></div></div></div></div><div className="panel activity-panel"><div className="panel-head"><div><h2>Live activity</h2><p>Recent agent and policy events</p></div><button className="text-button" onClick={() => setPage('audit')}>Full audit trail →</button></div><div className="activity-list">{auditEvents.slice(0,3).map((e,i)=><div className="activity-row" key={i}><span className={`activity-dot ${e.type}`}></span><div><b>{e.title}</b><small>{e.detail}</small></div><time>{e.time}</time></div>)}</div></div></section>
   </>;
@@ -550,4 +781,115 @@ function NewClaimModal({ onClose, onSubmit }) {
     </div>
   );
 }
+
+
+function Approvals({
+  claims,
+  approve,
+  setSelected,
+  chatMessages,
+  chat,
+  setChat,
+  sendChat,
+  chatFiles,
+  setChatFiles
+}) {
+  const pendingClaims = claims.filter(
+    claim => claim.status === 'Needs approval'
+  );
+
+  return (
+    <div className="approvals-page">
+
+      <div className="approvals-heading">
+        <div>
+          <h2>Manager Approvals</h2>
+          <p>Review expense claims that require manager approval.</p>
+        </div>
+
+        <span className="approval-count">
+          {pendingClaims.length} awaiting review
+        </span>
+      </div>
+
+      <div className="manager-content-grid">
+
+        {/* LEFT: PENDING APPROVALS */}
+
+        <div className="approvals-card">
+
+          <div className="approvals-card-header">
+            <div>
+              <h3>Pending requests</h3>
+              <p>Claims waiting for your decision</p>
+            </div>
+
+            <span className="approval-badge">
+              {pendingClaims.length} Pending
+            </span>
+          </div>
+
+          {pendingClaims.length === 0 ? (
+            <div className="approvals-empty">
+              <h3>All caught up!</h3>
+              <p>There are no expense claims waiting for approval.</p>
+            </div>
+          ) : (
+            <div className="approvals-list">
+
+              {pendingClaims.map(claim => (
+                <div className="approval-row" key={claim.id}>
+
+                  <div className="approval-vendor">
+                    <div className="approval-vendor-icon">₹</div>
+
+                    <div>
+                      <h4>{claim.vendor}</h4>
+                      <p>{claim.category} · {claim.date}</p>
+                      <small>{claim.person} · {claim.id}</small>
+                    </div>
+                  </div>
+
+                  <div className="approval-amount">
+                    <small>Claim amount</small>
+                    <strong>
+                      ₹{Number(claim.amount).toLocaleString('en-IN')}
+                    </strong>
+                  </div>
+
+                  <span className="approval-status">
+                    Needs approval
+                  </span>
+
+                  <button
+                    className="approval-review-btn"
+                    onClick={() => setSelected(claim)}
+                  >
+                    Review claim →
+                  </button>
+
+                </div>
+              ))}
+
+            </div>
+          )}
+
+        </div>
+
+        {/* RIGHT: MANAGER AI ASSISTANT */}
+
+        <AssistantPanel
+          chatMessages={chatMessages}
+          chat={chat}
+          setChat={setChat}
+          sendChat={sendChat}
+          role="Manager"
+        />
+
+      </div>
+
+    </div>
+  );
+}
+
 export default App;
