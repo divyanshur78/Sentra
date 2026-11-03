@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Sentra AI — Backend (Person 1)
 
 Hackathon backend for the Governed ExpenseClaim Agent brief.
@@ -44,3 +45,7 @@ See `docs/PERSON3_INTEGRATION.md`. Person 3 implements `GovernancePort` in `app/
 
 ## Notes
 This is a demo mock ERP, not production finance software. Demo login is not real authentication. Receipt extraction uses OCR/text heuristics and must be reviewed by the employee. Set `GEMINI_API_KEY` in `.env` for optional Gemini request interpretation; local fallback works without it. Never commit `.env`.
+=======
+# Sentra
+Governed AI agents for secure, intelligent, and human-controlled task automation.
+>>>>>>> 51f644a839708acd19ab0d013242bfbd053ffb59
