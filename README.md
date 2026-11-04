@@ -1,51 +1,69 @@
-<<<<<<< HEAD
-# Sentra AI — Backend (Person 1)
+# Sentra AI — Governed ExpenseClaim Agent
 
-Hackathon backend for the Governed ExpenseClaim Agent brief.
-
-## Ownership
-**Person 1:** FastAPI core, SQLite/mock ERP, employee memory, receipt extraction, LLM-assisted intent parsing, expense classification, agent workflow, draft/approval/rejection/submission lifecycle, deterministic R1–R9 rule evaluators.
-
-**Person 3:** central policy gateway, R10 prompt-injection and red-team engine, immutable/hash-chained audit, evaluation APIs, streaming updates, integration reliability.
-
-Person 1 provides R1–R9 domain evaluators. Person 3 owns the gateway that intercepts tool calls and calls these evaluators. Do not build a second gateway in Person 1's code.
-
-## Windows setup
-```powershell
-cd SentraAI_Backend_Person1
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-uvicorn app.main:app --reload
-```
-Docs: http://127.0.0.1:8000/docs | Health: http://127.0.0.1:8000/health
-
-Demo users: employee `emp-001`, manager `mgr-001`, second employee `emp-002`, second manager `mgr-002`.
-
-## Main endpoints
-- `POST /api/auth/login`
-- `POST /api/chat`
-- `POST /api/receipts/upload?employee_id=emp-001` (multipart key `files`)
-- `POST /api/claims/draft`
-- `GET /api/claims/{claim_id}?requester_id=emp-001`
-- `POST /api/claims/{claim_id}/submit`
-- `POST /api/claims/{claim_id}/approve`
-- `POST /api/claims/{claim_id}/reject`
-- `POST /api/claims/{claim_id}/finalize`
-- `GET /api/agent/trace/{run_id}?requester_id=emp-001`
-- `GET /api/memory/{employee_id}?requester_id=emp-001`
-- `GET /api/policy/rules`
-- `GET /api/admin/metrics`
-- `GET /api/admin/policy-decisions`
-- `POST /api/redteam/run`
-
-## Integration
-See `docs/PERSON3_INTEGRATION.md`. Person 3 implements `GovernancePort` in `app/integrations/governance_port.py` and swaps the adapter in `app/integrations/provider.py`. Preserve `ToolCall` and `PolicyDecision` field names and decision values `ALLOWED`, `DENIED`, `ESCALATED`.
-
-## Notes
-This is a demo mock ERP, not production finance software. Demo login is not real authentication. Receipt extraction uses OCR/text heuristics and must be reviewed by the employee. Set `GEMINI_API_KEY` in `.env` for optional Gemini request interpretation; local fallback works without it. Never commit `.env`.
-=======
-# Sentra
 Governed AI agents for secure, intelligent, and human-controlled task automation.
->>>>>>> 51f644a839708acd19ab0d013242bfbd053ffb59
+
+## Architecture
+- **Backend**: FastAPI core, SQLite database, employee memory, receipt OCR/extraction, LLM intent parsing, deterministic policy rules (R1–R9), and Person 3 policy gateway integration (R10 prompt injection & red-team defence, immutable hash-chained audit log).
+- **Frontend**: React + Vite single page application with dedicated portals for:
+  - **Employee**: Submit claims, chat with Sentra AI assistant, attach receipts, track expenses.
+  - **Manager**: Review and approve/reject claims, AI companion for approval policy checks.
+  - **Owner**: Evaluation matrix, Red-Team security lab, verifiable audit log.
+
+## Quick Start
+
+### 1. Automated Start (Windows)
+Run the startup script from PowerShell in the project root:
+```powershell
+.\start.ps1
+```
+Or with batch file:
+```cmd
+start.bat
+```
+
+### 2. Manual Start
+
+#### Backend:
+```powershell
+# Copy environment file if not present
+Copy-Item .env.example .env
+
+# Initialize database
+python init_db.py
+
+# Run FastAPI backend
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+- API Docs: http://127.0.0.1:8000/docs
+- Health check: http://127.0.0.1:8000/health
+
+#### Frontend:
+```powershell
+cd Sentrafrnt
+npm install
+npm run dev
+```
+- App UI: http://localhost:5173
+
+## Demo Accounts
+- **Employee**: `emp-001` (Aarav Sharma), `emp-002` (Diya Patel) — (any password)
+- **Manager**: `mgr-001` (Rohan Mehta), `mgr-002` (Neha Verma) — (any password)
+- **Owner**: `O1001` / Password: `Own@123`
+
+## Deterministic Governance Rules
+- **R1**: At least one valid receipt required.
+- **R2**: Monthly employee limit enforced.
+- **R3**: Category limit (Meal max ₹5,000).
+- **R4**: Restricted categories blocked (Alcohol, personal travel, cash withdrawal).
+- **R5**: Duplicate claim detection (same vendor, amount, date).
+- **R6**: Manager approval escalation for claims > ₹25,000.
+- **R7**: Claims without valid receipts cannot be approved.
+- **R8**: Cross-employee profile/claim access denied.
+- **R9**: Manager assignment enforced (only assigned manager may approve).
+- **R10**: Untrusted receipt text treated as data, never executable instructions (prompt injection blocked).
+
+## Testing
+Run backend unit & policy tests:
+```powershell
+pytest
+```

@@ -7,6 +7,8 @@ class LoginRequest(BaseModel):
 class ChatRequest(BaseModel):
     employee_id: str
     message: str
+    receipt_ids: Optional[list[str]] = None
+    auto_submit: bool = True
 
 class ExpenseItem(BaseModel):
     receipt_id: Optional[str] = None

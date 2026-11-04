@@ -75,9 +75,9 @@ export const api = {
       post({ manager_id, reason: 'Manager finalized approved claim' })
     ),
 
-  // AI assistant
-  chat: (employee_id, message) =>
-    request('/chat', post({ employee_id, message })),
+  // AI assistant (with automatic drafting & submission)
+  chat: (employee_id, message, receipt_ids = null, auto_submit = true) =>
+    request('/chat', post({ employee_id, message, receipt_ids, auto_submit })),
 
   // Red-team testing
   runRedTeam: (prompt, employee_id = 'emp-001') =>
@@ -92,7 +92,7 @@ export const api = {
 
   // Governance and monitoring
   getMetrics: () =>
-    request('/governance/metrics'),
+    request('/admin/metrics'),
 
   getAudit: (limit = 100) =>
     request(`/governance/audit?limit=${limit}`),
@@ -108,4 +108,7 @@ export const api = {
 
   getGovernanceHealth: () =>
     request('/governance/health'),
+
+  getPolicyDecisions: () =>
+    request('/admin/policy-decisions'),
 };

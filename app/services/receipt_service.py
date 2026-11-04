@@ -48,4 +48,4 @@ def save_receipt(employee_id,filename,data):
           (id,employee_id,filename,vendor,expense_date,amount,category,extracted_text,confidence,created_at)
           VALUES (?,?,?,?,?,?,?,?,?,?)""",
           (rid,employee_id,filename,parsed["vendor"],parsed["date"],parsed["amount"],parsed["category"],text,parsed["confidence"],now_iso()))
-    return {"receipt_id":rid,"filename":filename,"extracted_text":text[:4000],**parsed}
+    return {"id":rid,"receipt_id":rid,"filename":filename,"extracted_text":text[:4000],**parsed}
