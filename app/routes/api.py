@@ -36,6 +36,51 @@ def draft(body: DraftClaimRequest):
     try: return create_draft(body.employee_id,body.title,body.purpose,[x.model_dump() for x in body.items],body.cost_center)
     except ValueError as e: raise HTTPException(400,str(e))
 
+@router.get("/claims")
+def list_claims(requester_id: str):
+    with get_db() as db:
+        requester = db.execute(
+            "SELECT * FROM employees WHERE id = ?",
+            (requester_id,)
+        ).fetchone()
+
+        if not requester:
+            raise HTTPException(404, "User not found")
+
+        if requester["role"].lower() == "manager":
+            rows = db.execute(
+                """
+                SELECT c.id, e.name AS employee_name
+                FROM claims c
+                JOIN employees e ON e.id = c.employee_id
+                WHERE c.manager_id = ?
+                ORDER BY c.created_at DESC
+                """,
+                (requester_id,)
+            ).fetchall()
+        else:
+            rows = db.execute(
+                """
+                SELECT c.id, e.name AS employee_name
+                FROM claims c
+                JOIN employees e ON e.id = c.employee_id
+                WHERE c.employee_id = ?
+                ORDER BY c.created_at DESC
+                """,
+                (requester_id,)
+            ).fetchall()
+
+    claims = []
+
+    for row in rows:
+        claim = get_claim(row["id"])
+
+        if claim:
+            claim["employee_name"] = row["employee_name"]
+            claims.append(claim)
+
+    return {"claims": claims}
+
 @router.get("/claims/{claim_id}")
 def claim_detail(claim_id: str, requester_id: str):
     claim = get_claim(claim_id)

@@ -27,6 +27,9 @@ export const api = {
   login: (user_id) =>
     request('/auth/login', post({ user_id })),
 
+  getClaims: (requesterId) =>
+    request(`/claims?requester_id=${encodeURIComponent(requesterId)}`),
+
   // Receipt upload
   uploadReceipt: (employeeId, file) => {
     const form = new FormData();

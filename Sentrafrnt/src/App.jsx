@@ -86,21 +86,83 @@ const login = (selectedRole, user) => {
   setPage('overview');
 };
   const requestClaimDecision = (id, status) => { setDecisionReason(''); setDecisionModal({ kind: 'claim', id, status, title: status === 'Approved' ? 'Approve expense claim' : 'Reject expense claim' }); };
-  const saveDecision = () => {
-    const reason = decisionReason.trim();
-    if (!reason) return;
-    if (decisionModal?.kind === 'claim') {
-      const { id, status } = decisionModal;
-      setClaims(old => old.map(c => c.id === id ? { ...c, status, decisionReason: reason, decisionBy: userName } : c));
-      setSelected(old => old?.id === id ? { ...old, status, decisionReason: reason, decisionBy: userName } : old);
-      showToast(`Claim ${id} ${status.toLowerCase()}.`);
-    } else if (decisionModal?.kind === 'owner') {
-      const { id, status } = decisionModal;
-      setOwnerScores(old => old.map(item => item.id === id ? { ...item, status, reason } : item));
-      showToast(`${decisionModal.title} marked ${status === 'Approved' ? 'Pass' : 'Fail'}.`);
+ const saveDecision = async () => {
+  const reason = decisionReason.trim();
+
+  if (!reason) {
+    showToast('Please enter a decision reason.');
+    return;
+  }
+
+  if (decisionModal?.kind === 'claim') {
+    const { id, status } = decisionModal;
+
+    try {
+      showToast('Processing manager decision...');
+
+      let updatedClaim;
+
+      if (status === 'Approved') {
+        // First approve the claim
+        await api.approveClaim(id, userId, reason);
+
+        // Then finalize the approved claim
+        updatedClaim = await api.finalizeClaim(id, userId);
+      } else {
+        // Reject the claim
+        updatedClaim = await api.rejectClaim(id, userId, reason);
+      }
+
+      const finalStatus = status === 'Approved' ? 'Submitted' : 'Rejected';
+
+      setClaims(old =>
+        old.map(c =>
+          c.id === id
+            ? {
+                ...c,
+                status: finalStatus,
+                decisionReason: reason,
+                decisionBy: userName
+              }
+            : c
+        )
+      );
+
+      setSelected(old =>
+        old?.id === id
+          ? {
+              ...old,
+              status: finalStatus,
+              decisionReason: reason,
+              decisionBy: userName
+            }
+          : old
+      );
+
+      showToast(updatedClaim?.message || `Claim ${status.toLowerCase()} successfully.`);
+
+    } catch (error) {
+      console.error('Manager decision failed:', error);
+      showToast(error.message || 'Unable to process decision.');
+      return;
     }
-    setDecisionModal(null); setDecisionReason('');
-  };
+
+  } else if (decisionModal?.kind === 'owner') {
+    const { id, status } = decisionModal;
+
+    setOwnerScores(old =>
+      old.map(item =>
+        item.id === id ? { ...item, status, reason } : item
+      )
+    );
+
+    showToast(`${decisionModal.title} marked ${status === 'Approved' ? 'Pass' : 'Fail'}.`);
+  }
+
+  setDecisionModal(null);
+  setDecisionReason('');
+};
+
   const openOwnerDecision = (item, status) => { setDecisionReason(item.reason || ''); setDecisionModal({ kind: 'owner', id: item.id, status, title: item.title }); };
   const runAttack = async () => {
     if (!prompt.trim()) return;
@@ -110,15 +172,11 @@ const login = (selectedRole, user) => {
     finally { setRunning(false); }
   };
    
-const sendChat = () => {
+const sendChat = async () => {
   if (!chat.trim() && chatFiles.length === 0) return;
 
   const userMessage = chat.trim() || 'Please review these attached files.';
   const fileNames = chatFiles.map(file => file.name);
-
-  const response = role === 'Manager'
-    ? 'Your files have been attached. Connect the assistant to the backend to analyse their contents and retrieve live claim information.'
-    : 'Your files have been attached. Connect the assistant to the backend to extract receipt details and prepare your expense claim.';
 
   setChatMessages(old => [
     ...old,
@@ -126,69 +184,130 @@ const sendChat = () => {
       from: 'you',
       text: userMessage,
       files: fileNames
-    },
-    {
-      from: 'agent',
-      text: response
     }
   ]);
 
   setChat('');
   setChatFiles([]);
-};
 
- const createClaim = (formData) => {
-  const vendor = formData.vendor.trim();
-  const amount = Number(formData.amount);
-  const date = formData.date;
-  const category = formData.category;
-
-  const duplicate = claims.some(
-    claim =>
-      claim.vendor.toLowerCase() === vendor.toLowerCase() &&
-      Number(claim.amount) === amount &&
-      claim.date === date
-  );
-
-  let status = 'Submitted';
-  let reason = 'Claim submitted for policy review.';
-
-  if (['Alcohol', 'Personal travel', 'Cash withdrawal'].includes(category)) {
-    status = 'Blocked';
-    reason = 'R4: This expense category is non-reimbursable.';
-  } else if (duplicate) {
-    status = 'Blocked';
-    reason = 'R5: A possible duplicate claim was detected.';
-  } else if (amount > 25000) {
-    status = 'Needs approval';
-    reason = 'R6: Claims above ₹25,000 require manager approval.';
+  if (role !== 'Employee') {
+    setChatMessages(old => [
+      ...old,
+      {
+        from: 'agent',
+        text: 'The AI assistant is currently available for employee expense workflows.'
+      }
+    ]);
+    return;
   }
 
-  const newClaim = {
-    id: `CLM-${Date.now()}`,
-    person: userName,
-    purpose: formData.purpose.trim(),
-    vendor,
-    amount,
-    date,
-    category,
-    status,
-    risk: amount > 25000 ? 'High' : 'Low',
-    items: 1,
-    initials: userName
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase(),
-    receiptName: formData.receipt.name,
-    policyReason: reason
-  };
+  try {
+    const result = await api.chat(userId, userMessage);
 
-  setClaims(old => [newClaim, ...old]);
-  setSelected(newClaim);
-  setNewClaimOpen(false);
-  showToast(`Claim ${newClaim.id} created successfully.`);
+    const responseText =
+      result.response ||
+      result.message ||
+      result.answer ||
+      'The backend processed your request.';
+
+    setChatMessages(old => [
+      ...old,
+      {
+        from: 'agent',
+        text: responseText
+      }
+    ]);
+
+  } catch (error) {
+    console.error('AI chat failed:', error);
+
+    setChatMessages(old => [
+      ...old,
+      {
+        from: 'agent',
+        text: `Unable to reach Sentra AI: ${error.message}`
+      }
+    ]);
+  }
+};
+const createClaim = async (formData) => {
+  try {
+    showToast('Uploading receipt...');
+
+    // 1. Upload receipt
+    const uploadResult = await api.uploadReceipt(
+      userId,
+      formData.receipt
+    );
+
+    const receipt = uploadResult.receipts?.[0];
+
+    if (!receipt?.id) {
+      throw new Error('Receipt upload failed.');
+    }
+
+    // 2. Create draft claim
+    const draft = await api.createDraft({
+      employee_id: userId,
+      title: formData.purpose.trim(),
+      purpose: formData.notes?.trim() || formData.purpose.trim(),
+      items: [
+        {
+          receipt_id: receipt.id,
+          vendor: formData.vendor.trim(),
+          date: formData.date,
+          amount: Number(formData.amount),
+          category: formData.category,
+          description: formData.notes || ''
+        }
+      ]
+    });
+
+    // 3. Submit claim for backend policy evaluation
+    const result = await api.submitClaim(draft.id, userId);
+
+    const backendClaim = result.claim || draft;
+    const firstItem = backendClaim.items?.[0] || {};
+
+    const statusMap = {
+      PENDING_APPROVAL: 'Needs approval',
+      SUBMITTED: 'Submitted',
+      APPROVED: 'Approved',
+      REJECTED: 'Rejected',
+      DRAFT: result.policy?.decision === 'DENIED' ? 'Blocked' : 'Draft'
+    };
+
+    // 4. Map backend response to existing UI
+    const newClaim = {
+      id: backendClaim.id,
+      person: userName,
+      purpose: backendClaim.title || formData.purpose,
+      vendor: firstItem.vendor || formData.vendor,
+      amount: Number(backendClaim.total || formData.amount),
+      date: firstItem.date || formData.date,
+      category: firstItem.category || formData.category,
+      status: statusMap[backendClaim.status] || backendClaim.status,
+      risk: Number(backendClaim.total || 0) > 25000 ? 'High' : 'Low',
+      items: backendClaim.items?.length || 1,
+      initials: userName.split(' ')
+        .map(word => word[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase(),
+      receiptName: formData.receipt.name,
+      policyReason: result.message || 'Backend policy evaluation completed.'
+    };
+
+    setClaims(old => [newClaim, ...old]);
+    setSelected(newClaim);
+    setNewClaimOpen(false);
+
+    showToast(result.message || `Claim ${newClaim.id} processed successfully.`);
+
+  } catch (error) {
+    console.error('Claim creation failed:', error);
+    showToast(error.message || 'Unable to create claim.');
+  }
 };
   if (!role) return <LoginScreen onLogin={login} />;
 
