@@ -330,7 +330,7 @@ function LoginScreen({ onLogin }) {
     onLogin(selectedRole, account.name);
   };
   return <div className="login-screen"><form className="login-card" onSubmit={submitLogin}>
-    <div className="login-brand"><div className="brand-mark"><span></span><span></span><span></span></div><div><b>sentra</b><small>EXPENSE GOVERNANCE</small></div></div>
+    <div className="login-brand"><div className="brand-mark"><span></span><span></span><span></span></div><div><b>Sentra</b><small>EXPENSE GOVERNANCE</small></div></div>
     <div className="login-intro"><span className="eyebrow">GOVERNED EXPENSECLAIM AGENT</span><h1>Welcome to Sentra</h1><p>Sign in with the credentials assigned to your role.</p></div>
     <label className="login-label">SELECT YOUR PORTAL</label>
     <div className="login-roles">{roles.map(item => <button type="button" key={item.id} className={`login-role ${selectedRole === item.id ? 'selected' : ''}`} onClick={() => { setSelectedRole(item.id); setError(''); setUserId(''); setPassword(''); }}><span className="login-role-icon">{item.icon}</span><span><b>{item.title}</b><small>{item.desc}</small></span><i>{selectedRole === item.id ? '✓' : ''}</i></button>)}</div>
@@ -509,29 +509,212 @@ function AssistantPanel({
   );
 }
 
-function Overview({ claims, setPage, setSelected, chatMessages, chat, setChat, sendChat, chatFiles, setChatFiles }) {
-  const pending = claims.filter(c => c.status === 'Needs approval').length;
-  return <>
-    <section className="stats-grid">
-      <Stat label="Total claimed" value="₹86,420" delta="12.8%" note="vs. last month" icon="↗" tone="violet" />
-      <Stat label="Awaiting approval" value={String(pending + 2).padStart(2, '0')} delta="Needs attention" note="3 claims in queue" icon="◷" tone="amber" />
-      <Stat label="Approved this month" value="24" delta="↑ 8.4%" note="vs. last month" icon="✓" tone="green" />
-      <Stat label="Policy compliance" value="98.6%" delta="+2.1%" note="Excellent control" icon="◈" tone="blue" />
-    </section>
-    <section className="overview-grid">
-      <div className="panel claims-panel"><div className="panel-head"><div><h2>Recent claims</h2><p>Your latest expense activity</p></div><button className="text-button" onClick={() => setPage('claims')}>View all <span>→</span></button></div><div className="table-wrap"><table><thead><tr><th>CLAIM</th><th>DATE</th><th>AMOUNT</th><th>STATUS</th><th></th></tr></thead><tbody>{claims.slice(0, 4).map(c => <tr key={c.id} onClick={() => { setSelected(c); setPage('claims'); }}><td><div className="claim-cell"><div className="mini-icon">{c.category === 'Travel' ? '✈' : c.category === 'Meals' ? '♨' : '⌖'}</div><div><b>{c.purpose}</b><small>{c.id}</small></div></div></td><td>{c.date}</td><td className="amount">{money(c.amount)}</td><td><Status status={c.status} /></td><td className="arrow-cell">↗</td></tr>)}</tbody></table></div><div className="panel-foot"><span>Showing 4 of 12 claims</span><button onClick={() => setPage('claims')}>Open claims <span>→</span></button></div></div>
-      <AssistantPanel
-        chatMessages={chatMessages}
-        chat={chat}
-        setChat={setChat}
-        sendChat={sendChat}
-        role="Employee"
-        chatFiles={chatFiles}
-        setChatFiles={setChatFiles}
-/>
-    </section>
-    <section className="bottom-grid"><div className="panel"><div className="panel-head"><div><h2>Policy health</h2><p>Compliance overview · November 2026</p></div><span className="tiny-tag">LIVE</span></div><div className="health-content"><div className="donut"><div><b>98.6%</b><small>COMPLIANT</small></div></div><div className="health-legend"><div><i className="legend-dot green-dot"></i><span>Passed checks</span><b>142</b></div><div><i className="legend-dot amber-dot"></i><span>Escalated</span><b>08</b></div><div><i className="legend-dot red-dot"></i><span>Blocked</span><b>03</b></div></div></div></div><div className="panel activity-panel"><div className="panel-head"><div><h2>Live activity</h2><p>Recent agent and policy events</p></div><button className="text-button" onClick={() => setPage('audit')}>Full audit trail →</button></div><div className="activity-list">{auditEvents.slice(0,3).map((e,i)=><div className="activity-row" key={i}><span className={`activity-dot ${e.type}`}></span><div><b>{e.title}</b><small>{e.detail}</small></div><time>{e.time}</time></div>)}</div></div></section>
-  </>;
+function Overview({
+  claims,
+  setPage,
+  setSelected,
+  chatMessages,
+  chat,
+  setChat,
+  sendChat,
+  chatFiles,
+  setChatFiles
+}) {
+  const pending = claims.filter(
+    c => c.status === 'Needs approval'
+  ).length;
+
+  return (
+    <>
+      <section className="overview-dashboard">
+        <div className="overview-left">
+          <section className="stats-grid">
+            <Stat
+              label="Total claimed"
+              value="₹86,420"
+              delta="12.8%"
+              note="vs. last month"
+              icon="↗"
+              tone="violet"
+            />
+            <Stat
+              label="Awaiting approval"
+              value={String(pending + 2).padStart(2, '0')}
+              delta="Needs attention"
+              note="3 claims in queue"
+              icon="◷"
+              tone="amber"
+            />
+            <Stat
+              label="Approved this month"
+              value="24"
+              delta="↑ 8.4%"
+              note="vs. last month"
+              icon="✓"
+              tone="green"
+            />
+            <Stat
+              label="Policy compliance"
+              value="98.6%"
+              delta="+2.1%"
+              note="Excellent control"
+              icon="◈"
+              tone="blue"
+            />
+          </section>
+
+          <div className="panel claims-panel">
+            <div className="panel-head">
+              <div>
+                <h2>Recent claims</h2>
+                <p>Your latest expense activity</p>
+              </div>
+
+              <button
+                className="text-button"
+                onClick={() => setPage('claims')}
+              >
+                View all <span>→</span>
+              </button>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>CLAIM</th>
+                    <th>DATE</th>
+                    <th>AMOUNT</th>
+                    <th>STATUS</th>
+                    <th></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {claims.slice(0, 4).map(c => (
+                    <tr
+                      key={c.id}
+                      onClick={() => {
+                        setSelected(c);
+                        setPage('claims');
+                      }}
+                    >
+                      <td>
+                        <div className="claim-cell">
+                          <div className="mini-icon">
+                            {c.category === 'Travel'
+                              ? '✈'
+                              : c.category === 'Meals'
+                                ? '♨'
+                                : '⌖'}
+                          </div>
+
+                          <div>
+                            <b>{c.purpose}</b>
+                            <small>{c.id}</small>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>{c.date}</td>
+                      <td className="amount">{money(c.amount)}</td>
+                      <td><Status status={c.status} /></td>
+                      <td className="arrow-cell">↗</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="panel-foot">
+              <span>Showing 4 of 12 claims</span>
+              <button onClick={() => setPage('claims')}>
+                Open claims <span>→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <AssistantPanel
+          chatMessages={chatMessages}
+          chat={chat}
+          setChat={setChat}
+          sendChat={sendChat}
+          role="Employee"
+          chatFiles={chatFiles}
+          setChatFiles={setChatFiles}
+        />
+      </section>
+
+      <section className="bottom-grid">
+        <div className="panel">
+          <div className="panel-head">
+            <div>
+              <h2>Policy health</h2>
+              <p>Compliance overview · November 2026</p>
+            </div>
+            <span className="tiny-tag">LIVE</span>
+          </div>
+
+          <div className="health-content">
+            <div className="donut">
+              <div>
+                <b>98.6%</b>
+                <small>COMPLIANT</small>
+              </div>
+            </div>
+
+            <div className="health-legend">
+              <div>
+                <i className="legend-dot green-dot"></i>
+                <span>Passed checks</span>
+                <b>142</b>
+              </div>
+              <div>
+                <i className="legend-dot amber-dot"></i>
+                <span>Escalated</span>
+                <b>08</b>
+              </div>
+              <div>
+                <i className="legend-dot red-dot"></i>
+                <span>Blocked</span>
+                <b>03</b>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel activity-panel">
+          <div className="panel-head">
+            <div>
+              <h2>Live activity</h2>
+              <p>Recent agent and policy events</p>
+            </div>
+
+            <button
+              className="text-button"
+              onClick={() => setPage('audit')}
+            >
+              Full audit trail →
+            </button>
+          </div>
+
+          <div className="activity-list">
+            {auditEvents.slice(0, 3).map((e, i) => (
+              <div className="activity-row" key={i}>
+                <span className={`activity-dot ${e.type}`}></span>
+                <div>
+                  <b>{e.title}</b>
+                  <small>{e.detail}</small>
+                </div>
+                <time>{e.time}</time>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  );
 }
 function Stat({ label, value, delta, note, icon, tone }) { return <div className="stat-card"><div className="stat-top"><span>{label}</span><div className={`stat-icon ${tone}`}>{icon}</div></div><div className="stat-value">{value}</div><div className="stat-bottom"><b className={tone}>{delta}</b><span>{note}</span></div></div>; }
 function Status({ status }) { const cls = status === 'Approved' ? 'approved' : status === 'Rejected' ? 'rejected' : status === 'Needs approval' ? 'pending' : status === 'Blocked' ? 'blocked' : 'submitted'; return <span className={`status ${cls}`}><i></i>{status}</span>; }
@@ -884,6 +1067,8 @@ function Approvals({
           setChat={setChat}
           sendChat={sendChat}
           role="Manager"
+          chatFiles={chatFiles}
+          setChatFiles={setChatFiles}
         />
 
       </div>
