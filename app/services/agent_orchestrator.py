@@ -1,4 +1,4 @@
-import re
+﻿import re
 from typing import Optional, List
 from app.services.llm_service import interpret_expense_request
 from app.services.memory_service import get_employee_memory
@@ -129,7 +129,7 @@ def generate_agent_response(message: str, memory: dict, intent: dict) -> tuple[s
     # Manager queries
     if role == "manager":
         # Check if asking for review, triage, risk assessment, or summarizing claims
-        if any(w in msg for w in ["review", "summarize", "pending", "queue", "approvals", "awaiting", "triage", "risk", "status"]):
+        if any(w in msg for w in ["review", "summarize", "pending", "queue", "approvals", "awaiting", "triage", "risk", "status", "auto-approved", "auto approved", "declined", "how many", "high risk", "low risk", "moderate", "overview", "claims", "portfolio"]):
             return build_manager_claim_review(memory["employee_id"], message)
 
         if any(w in msg for w in ["25000", "25,000", "threshold", "approval rule"]):
@@ -240,7 +240,7 @@ def run_expense_agent(
                 if row:
                     target_receipts.append(dict(row))
         else:
-            wants_submit = any(k in message.lower() for k in ["submit", "claim", "receipt", "draft", "expense", "bill", "invoice"]) or intent.get("amount") is not None
+            wants_submit = any(k in message.lower() for k in ["submit", "claim", "receipt", "draft", "expense", "bill", "invoice", "total", "amount", "rs", "inr"]) or intent.get("amount") is not None
             if wants_submit:
                 all_rcpts = db.execute("SELECT * FROM receipts WHERE employee_id=? ORDER BY created_at DESC LIMIT 5", (employee_id,)).fetchall()
                 claim_rows = db.execute("SELECT items_json FROM claims WHERE employee_id=?", (employee_id,)).fetchall()
@@ -258,11 +258,32 @@ def run_expense_agent(
     if target_receipts:
         items = []
         for r in target_receipts:
+            rcpt_amount = r.get("amount")
+            final_amount = rcpt_amount if rcpt_amount is not None else intent.get("amount")
+
+            if final_amount is None:
+                vendor_txt = r.get("vendor") or "your uploaded bill"
+                response_text = (
+                    f"I scanned {vendor_txt}, but could not clearly read the total bill amount from the document. "
+                    "Please state the total amount (e.g. 'The total bill is Rs. 1450') so I can process and evaluate your claim."
+                )
+                return {
+                    "run_id": run_id,
+                    "employee_id": employee_id,
+                    "intent": intent,
+                    "memory": memory,
+                    "claim": None,
+                    "policy": None,
+                    "next_action": "NEED_AMOUNT_CONFIRMATION",
+                    "message": response_text,
+                    "response": response_text
+                }
+
             items.append({
                 "receipt_id": r["id"],
                 "vendor": r.get("vendor") or intent.get("vendor") or "Vendor",
                 "date": r.get("expense_date") or now_iso()[:10],
-                "amount": float(r.get("amount") or intent.get("amount") or 100.0),
+                "amount": float(final_amount),
                 "category": r.get("category") or intent.get("category") or "other",
                 "description": intent.get("purpose") or "Automated expense claim"
             })

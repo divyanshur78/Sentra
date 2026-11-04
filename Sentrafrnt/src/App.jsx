@@ -1,4 +1,4 @@
-import BrandLogo from './BrandLogo.jsx';
+﻿import BrandLogo from './BrandLogo.jsx';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { claims as initialClaims, auditEvents } from './mock';
 import { api } from './api';
@@ -1382,7 +1382,7 @@ function ClaimDetail({claim, onClose, role, userId, onDecisionRequest}) {
           </div>
           <span className="verified-label">BACKEND DATA</span>
         </div>
-        {role === 'Manager' && claim.status === 'Needs approval' && onDecisionRequest && (
+        {role === 'Manager' && (claim.status === 'Needs review' || claim.status === 'Needs approval') && onDecisionRequest && (
           <div className="decision-modal-actions" style={{ marginTop: 16 }}>
             <button className="approve-button" onClick={() => { onClose(); onDecisionRequest(claim.id, 'Approved'); }}>
               ✓ Approve
@@ -1566,13 +1566,13 @@ function Approvals({
   chatFiles,
   setChatFiles
 }) {
-  const [filter, setFilter] = useState('review'); // 'review', 'auto', 'declined', 'all'
+  const [filter, setFilter] = useState('all');
 
   const moderateClaims = claims.filter(
     c => c.status === 'Needs review' || c.status === 'Needs approval' || c.status === 'PENDING_APPROVAL'
   );
   const autoApprovedClaims = claims.filter(
-    c => c.status === 'Auto-approved' || (c.status === 'Approved' && c.risk === 'Low')
+    c => c.status === 'Auto-approved' || (c.status === 'Approved' && (c.risk === 'Low' || c.risk === 'low'))
   );
   const declinedClaims = claims.filter(
     c => c.status === 'Declined' || c.status === 'Rejected' || c.risk === 'High'
@@ -1584,15 +1584,30 @@ function Approvals({
     : filter === 'declined' ? declinedClaims
     : claims;
 
+  const getRiskIcon = (risk) => {
+    if (risk === 'Low') return '🟢';
+    if (risk === 'Moderate') return '🟡';
+    return '🔴';
+  };
+
+  const getDecisionLabel = (claim) => {
+    const isAuto = claim.risk === 'Low' || claim.status === 'Auto-approved';
+    const isDeclined = claim.risk === 'High' || claim.status === 'Declined' || claim.status === 'Rejected';
+    const isReview = claim.status === 'Needs review' || claim.status === 'Needs approval';
+    if (isAuto) return { label: 'Auto-Approved by AI', cls: 'auto-approved-pill' };
+    if (isDeclined) return { label: 'Declined by Policy', cls: 'declined-pill' };
+    if (isReview) return { label: 'Awaiting Manager Review', cls: 'pending-pill' };
+    return { label: claim.status, cls: '' };
+  };
+
   return (
     <div className="approvals-page">
 
       <div className="approvals-heading">
         <div>
-          <h2>Manager Governance & Approvals</h2>
+          <h2>Manager Governance &amp; Approvals</h2>
           <p>Low risk auto-approved · Moderate risk requires review · High risk declined</p>
         </div>
-
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <span className="approval-badge" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>
             🟡 {moderateClaims.length} Under review
@@ -1606,143 +1621,175 @@ function Approvals({
         </div>
       </div>
 
-      <div className="manager-content-grid">
+      {/* Risk Model Explanation Banner */}
+      <div className="risk-model-banner">
+        <div className="risk-model-item low">
+          <span>🟢</span>
+          <div>
+            <b>Low Risk — Auto-Approved</b>
+            <small>AI verifies all policy rules (R1–R9). No manager action needed. Status visible to employee.</small>
+          </div>
+        </div>
+        <div className="risk-model-item moderate">
+          <span>🟡</span>
+          <div>
+            <b>Moderate Risk — Manager Review</b>
+            <small>Exceeds ₹25,000 threshold (Rule R6). Your Approve/Decline decision required.</small>
+          </div>
+        </div>
+        <div className="risk-model-item high">
+          <span>🔴</span>
+          <div>
+            <b>High Risk — Auto-Declined</b>
+            <small>Policy violation detected. Automatically declined by guardrails. Status visible to employee.</small>
+          </div>
+        </div>
+      </div>
 
-        {/* LEFT: APPROVALS & RISK TRIAGE LIST */}
+      <div className="manager-content-grid">
 
         <div className="approvals-card">
 
           <div className="approvals-card-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
               <div>
-                <h3>{filter === 'review' ? 'Moderate Risk · Approval Queue'
-                     : filter === 'auto' ? 'Low Risk · Auto-Approved Claims'
-                     : filter === 'declined' ? 'High Risk · Declined Claims'
+                <h3>{filter === 'review' ? '🟡 Moderate Risk · Approval Queue'
+                     : filter === 'auto' ? '🟢 Low Risk · Auto-Approved Claims'
+                     : filter === 'declined' ? '🔴 High Risk · Declined Claims'
                      : 'All Claims Portfolio'}</h3>
                 <p>Governed by deterministic policy engine (R1–R10)</p>
               </div>
-
               <span className="approval-badge">
                 {displayedClaims.length} Claims
               </span>
             </div>
 
-            {/* Filter Chips */}
             <div className="filter-row" style={{ margin: 0, padding: 0 }}>
-              <button
-                type="button"
-                className={filter === 'review' ? 'filter-active' : ''}
-                onClick={() => setFilter('review')}
-              >
-                Needs Review ({moderateClaims.length})
-              </button>
-              <button
-                type="button"
-                className={filter === 'auto' ? 'filter-active' : ''}
-                onClick={() => setFilter('auto')}
-              >
-                Auto-Approved ({autoApprovedClaims.length})
-              </button>
-              <button
-                type="button"
-                className={filter === 'declined' ? 'filter-active' : ''}
-                onClick={() => setFilter('declined')}
-              >
-                Declined ({declinedClaims.length})
-              </button>
-              <button
-                type="button"
-                className={filter === 'all' ? 'filter-active' : ''}
-                onClick={() => setFilter('all')}
-              >
+              <button type="button" className={filter === 'all' ? 'filter-active' : ''} onClick={() => setFilter('all')}>
                 All ({claims.length})
+              </button>
+              <button type="button" className={filter === 'review' ? 'filter-active' : ''} onClick={() => setFilter('review')}>
+                🟡 Needs Review ({moderateClaims.length})
+              </button>
+              <button type="button" className={filter === 'auto' ? 'filter-active' : ''} onClick={() => setFilter('auto')}>
+                🟢 Auto-Approved ({autoApprovedClaims.length})
+              </button>
+              <button type="button" className={filter === 'declined' ? 'filter-active' : ''} onClick={() => setFilter('declined')}>
+                🔴 Declined ({declinedClaims.length})
               </button>
             </div>
           </div>
 
           {displayedClaims.length === 0 ? (
             <div className="approvals-empty">
-              <h3>{filter === 'review' ? 'All caught up!' : 'No claims in this category'}</h3>
+              <h3>{filter === 'review' ? '✅ All caught up!' : 'No claims in this category'}</h3>
               <p>{filter === 'review'
-                ? 'There are currently no moderate-risk claims waiting for approval.'
+                ? 'No moderate-risk claims are waiting for your approval.'
                 : 'Claims matching this risk category will appear here.'}</p>
             </div>
           ) : (
             <div className="approvals-list">
+              {displayedClaims.map(claim => {
+                const { label: decisionLabel, cls: decisionCls } = getDecisionLabel(claim);
+                const isModerate = claim.status === 'Needs review' || claim.status === 'Needs approval';
+                const isAutoApproved = claim.risk === 'Low' || claim.status === 'Auto-approved';
+                const isDeclined = claim.risk === 'High' || claim.status === 'Declined' || claim.status === 'Rejected';
 
-              {displayedClaims.map(claim => (
-                <div className="approval-row" key={claim.id} style={{ alignItems: 'flex-start' }}>
+                return (
+                  <div
+                    className={`approval-row risk-row-${claim.risk ? claim.risk.toLowerCase() : 'low'}`}
+                    key={claim.id}
+                    style={{ alignItems: 'flex-start' }}
+                  >
+                    <div className="approval-vendor">
+                      <div className="approval-vendor-icon">{getRiskIcon(claim.risk)}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4>{claim.vendor || claim.purpose}</h4>
+                        <p>{claim.category} · {claim.date}</p>
+                        <small>{claim.person} · {claim.id}</small>
 
-                  <div className="approval-vendor">
-                    <div className="approval-vendor-icon">
-                      {claim.risk === 'Low' ? '🟢' : claim.risk === 'Moderate' ? '🟡' : '🔴'}
+                        <div style={{ marginTop: '6px' }}>
+                          <span className={`decision-pill ${decisionCls}`}>{decisionLabel}</span>
+                        </div>
+
+                        {isAutoApproved && (
+                          <div style={{ marginTop: '5px', fontSize: '12px', color: '#166534', background: '#f0fdf4', borderRadius: '6px', padding: '5px 9px', lineHeight: 1.5 }}>
+                            ✓ AI verified all policy rules (R1–R9). Auto-approved &amp; submitted to ERP.
+                          </div>
+                        )}
+                        {isDeclined && claim.decisionReason && (
+                          <div style={{ marginTop: '5px', fontSize: '12px', color: '#991b1b', background: '#fff1f2', borderRadius: '6px', padding: '5px 9px', lineHeight: 1.5 }}>
+                            ⊘ {claim.decisionReason}
+                          </div>
+                        )}
+                        {isModerate && (
+                          <div style={{ marginTop: '5px', fontSize: '12px', color: '#92400e', background: '#fffbeb', borderRadius: '6px', padding: '5px 9px', lineHeight: 1.5 }}>
+                            ⚠ Exceeds ₹25,000 threshold (Rule R6) — your decision required
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div>
-                      <h4>{claim.vendor || claim.purpose}</h4>
-                      <p>{claim.category} · {claim.date}</p>
-                      <small>{claim.person} · {claim.id}</small>
-                      {claim.decisionReason && (
-                        <div style={{ marginTop: '4px', fontSize: '11px', color: '#64748b' }}>
-                          {claim.decisionReason}
-                        </div>
+                    <div className="approval-amount">
+                      <small>Claim amount</small>
+                      <strong>₹{Number(claim.amount).toLocaleString('en-IN')}</strong>
+                      <div style={{ marginTop: '4px' }}>
+                        <span className={`risk ${claim.risk === 'Moderate' ? 'medium' : (claim.risk || 'low').toLowerCase()}`}>
+                          {claim.risk} Risk
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="approval-status">
+                      <Status status={claim.status} />
+                    </span>
+
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <button className="approval-review-btn" onClick={() => setSelected(claim)}>
+                        Review →
+                      </button>
+
+                      {isModerate && (
+                        <>
+                          <button
+                            className="approve-button"
+                            style={{ padding: '7px 14px', fontSize: '13px' }}
+                            onClick={() => approve(claim.id, 'Approved')}
+                          >
+                            ✓ Approve
+                          </button>
+                          <button
+                            className="reject-button"
+                            style={{ padding: '7px 14px', fontSize: '13px' }}
+                            onClick={() => approve(claim.id, 'Rejected')}
+                          >
+                            ⊘ Decline
+                          </button>
+                        </>
+                      )}
+
+                      {isAutoApproved && !isModerate && (
+                        <span style={{ fontSize: '12px', color: '#166534', fontStyle: 'italic', textAlign: 'right' }}>
+                          No action needed
+                        </span>
+                      )}
+
+                      {isDeclined && !isModerate && (
+                        <span style={{ fontSize: '12px', color: '#991b1b', fontStyle: 'italic', textAlign: 'right' }}>
+                          Auto-declined
+                        </span>
                       )}
                     </div>
+
                   </div>
-
-                  <div className="approval-amount">
-                    <small>Claim amount</small>
-                    <strong>
-                      ₹{Number(claim.amount).toLocaleString('en-IN')}
-                    </strong>
-                    <div style={{ marginTop: '4px' }}>
-                      <span className={`risk ${claim.risk === 'Moderate' ? 'medium' : claim.risk.toLowerCase()}`}>
-                        {claim.risk} Risk
-                      </span>
-                    </div>
-                  </div>
-
-                  <span className="approval-status">
-                    <Status status={claim.status} />
-                  </span>
-
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    <button
-                      className="approval-review-btn"
-                      onClick={() => setSelected(claim)}
-                    >
-                      Review →
-                    </button>
-                    {claim.status === 'Needs review' && (
-                      <>
-                        <button
-                          className="approve-button"
-                          style={{ padding: '6px 12px', fontSize: '12px' }}
-                          onClick={() => approve(claim.id, 'Approved')}
-                        >
-                          ✓ Approve
-                        </button>
-                        <button
-                          className="reject-button"
-                          style={{ padding: '6px 12px', fontSize: '12px' }}
-                          onClick={() => approve(claim.id, 'Rejected')}
-                        >
-                          × Decline
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                </div>
-              ))}
-
+                );
+              })}
             </div>
           )}
 
         </div>
 
         {/* RIGHT: MANAGER AI ASSISTANT */}
-
         <AssistantPanel
           chatMessages={chatMessages}
           chat={chat}
