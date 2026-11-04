@@ -1,3 +1,4 @@
+import BrandLogo from './BrandLogo.jsx';
 import React, { useMemo, useState } from 'react';
 import { claims as initialClaims, auditEvents } from './mock';
 import { api } from './api';
@@ -182,18 +183,11 @@ const sendChat = () => {
       : [{ id: 'judge', label: 'Evaluation matrix', icon: '☷' }, { id: 'redteam', label: 'Red-team lab', icon: '⌘' }, { id: 'audit', label: 'Audit trail', icon: '◷' }];
   const title = page === 'overview' ? 'Overview' : page === 'claims' ? 'Expense claims' : page === 'approvals' ? 'Approval queue' : page === 'redteam' ? 'Red-team lab' : page === 'audit' ? 'Audit trail' : 'Judge evaluation';
   return <div className="app-shell">
-    
+
 <aside className="sidebar">
   <div className="brand">
-    <div className="brand-mark">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-    <div>
-      <b>Sentra</b>
-      <small>EXPENSE GOVERNANCE</small>
-    </div>
+    <BrandLogo size="small" />
+    <small>EXPENSE GOVERNANCE</small>
   </div>
 
   <div className="workspace-label">
@@ -242,59 +236,141 @@ const sendChat = () => {
   </div>
 </aside>
 
-    <main className="main-area">
-      <header className="topbar"><div className="breadcrumb">Sentra <span>/</span> <b>{title}</b></div><div className="top-actions"><div className="system-status"><i></i> Demo workspace</div><span className="role-chip">{role}</span><button className="logout-button" onClick={logout}>Log out</button></div></header>
-      <div className="page-wrap">
-        <div className="page-heading"><div><div className="eyebrow">SENTRA · GOVERNED EXPENSECLAIM AGENT</div><h1>{title}<span className="heading-spark">✳</span></h1><p>{page === 'overview' ? 'A clear view of your expenses, approvals and policy activity.' : page === 'redteam' ? 'Test how the agent responds to adversarial instructions.' : page === 'approvals' ? 'Review claims that need a human decision.' : page === 'audit' ? 'A traceable record of every agent and policy action.' : page === 'judge' ? 'Evaluate the solution using a consistent pass/fail review matrix.' : 'Track, review and manage submitted expense claims.'}</p></div><div className="signed-in-label"><span className="online-dot"></span> Signed in as <b>{userName}</b></div></div>
-        {page === 'overview' && role === 'Employee' && (
-          <Overview
-            claims={claims.filter(c => c.person === userName)}
-            setPage={setPage}
-            setSelected={setSelected}
-            chatMessages={chatMessages}
-            chat={chat}
-            setChat={setChat}
-            sendChat={sendChat}
-            chatFiles={chatFiles}
-            setChatFiles={setChatFiles}
-          />
-        )}
-        {page === 'claims' && (
-          <Claims
-            claims={role === 'Employee' ? claims.filter(c => c.person === userName) : claims}
-            setSelected={setSelected}
-            onNewClaim={() => setNewClaimOpen(true)}
-          />
-        )}
-        {page === 'approvals' && role === 'Manager' && (
-          <Approvals
-            claims={claims}
-            approve={requestClaimDecision}
-            setSelected={setSelected}
-            chatMessages={chatMessages}
-            chat={chat}
-            setChat={setChat}
-            sendChat={sendChat}
-            chatFiles={chatFiles}
-            setChatFiles={setChatFiles}
-          />
-        )}
-        {page === 'judge' && role === 'Judge' && <JudgeMatrix scores={judgeScores} onDecision={openJudgeDecision} />}
-        {page === 'redteam' && role === 'Judge' && <RedTeam prompt={prompt} setPrompt={setPrompt} runAttack={runAttack} running={running} result={attackResult} />}
-        {page === 'audit' && role !== 'Employee' && <Audit />}
-        {selected && (page === 'claims' || page === 'approvals') && <ClaimDetail claim={selected} onClose={() => setSelected(null)} />}
+<main className="main-area">
+
+  <header className="topbar">
+    <div className="topbar-brand">
+      <BrandLogo size="small" />
+      <span className="topbar-divider">/</span>
+      <b className="topbar-page-title">{title}</b>
+    </div>
+
+    <div className="top-actions">
+      <div className="system-status">
+        <i></i> Demo workspace
       </div>
-      <footer className="footer"><span>© 2026 Sentra Technologies</span><span><i></i> Protected by policy gateway <b>·</b> Demo v1.1</span></footer>
-    </main>
-    {decisionModal && <DecisionModal modal={decisionModal} reason={decisionReason} setReason={setDecisionReason} onClose={() => setDecisionModal(null)} onSave={saveDecision} />}
-    {newClaimOpen && (
-      <NewClaimModal
-        onClose={() => setNewClaimOpen(false)}
-        onSubmit={createClaim}
+
+      <span className="role-chip">{role}</span>
+
+      <button className="logout-button" onClick={logout}>
+        Log out
+      </button>
+    </div>
+  </header>
+
+  <div className="page-wrap">
+    <div className="page-heading">
+      <div>
+        <div className="eyebrow">SENTRA · GOVERNED EXPENSECLAIM AGENT</div>
+        <h1>{title}<span className="heading-spark">✳</span></h1>
+        <p>
+          {page === 'overview'
+            ? 'A clear view of your expenses, approvals and policy activity.'
+            : page === 'redteam'
+            ? 'Test how the agent responds to adversarial instructions.'
+            : page === 'approvals'
+            ? 'Review claims that need a human decision.'
+            : page === 'audit'
+            ? 'A traceable record of every agent and policy action.'
+            : page === 'judge'
+            ? 'Evaluate the solution using a consistent pass/fail review matrix.'
+            : 'Track, review and manage submitted expense claims.'}
+        </p>
+      </div>
+
+      <div className="signed-in-label">
+        <span className="online-dot"></span>
+        Signed in as <b>{userName}</b>
+      </div>
+    </div>
+
+    {page === 'overview' && role === 'Employee' && (
+      <Overview
+        claims={claims.filter(c => c.person === userName)}
+        setPage={setPage}
+        setSelected={setSelected}
+        chatMessages={chatMessages}
+        chat={chat}
+        setChat={setChat}
+        sendChat={sendChat}
+        chatFiles={chatFiles}
+        setChatFiles={setChatFiles}
       />
     )}
-    {toast && <div className="toast">✓ &nbsp;{toast}</div>}
-  </div>;
+
+    {page === 'claims' && (
+      <Claims
+        claims={role === 'Employee' ? claims.filter(c => c.person === userName) : claims}
+        setSelected={setSelected}
+        onNewClaim={() => setNewClaimOpen(true)}
+      />
+    )}
+
+    {page === 'approvals' && role === 'Manager' && (
+      <Approvals
+        claims={claims}
+        approve={requestClaimDecision}
+        setSelected={setSelected}
+        chatMessages={chatMessages}
+        chat={chat}
+        setChat={setChat}
+        sendChat={sendChat}
+        chatFiles={chatFiles}
+        setChatFiles={setChatFiles}
+      />
+    )}
+
+    {page === 'judge' && role === 'Judge' && (
+      <JudgeMatrix scores={judgeScores} onDecision={openJudgeDecision} />
+    )}
+
+    {page === 'redteam' && role === 'Judge' && (
+      <RedTeam
+        prompt={prompt}
+        setPrompt={setPrompt}
+        runAttack={runAttack}
+        running={running}
+        result={attackResult}
+      />
+    )}
+
+    {page === 'audit' && role !== 'Employee' && <Audit />}
+
+    {selected && (page === 'claims' || page === 'approvals') && (
+      <ClaimDetail
+        claim={selected}
+        onClose={() => setSelected(null)}
+      />
+    )}
+  </div>
+
+  <footer className="footer">
+    <span>© 2026 Sentra Technologies</span>
+    <span>
+      <i></i> Protected by policy gateway <b>·</b> Demo v1.1
+    </span>
+  </footer>
+</main>
+
+{decisionModal && (
+  <DecisionModal
+    modal={decisionModal}
+    reason={decisionReason}
+    setReason={setDecisionReason}
+    onClose={() => setDecisionModal(null)}
+    onSave={saveDecision}
+  />
+)}
+
+{newClaimOpen && (
+  <NewClaimModal
+    onClose={() => setNewClaimOpen(false)}
+    onSubmit={createClaim}
+  />
+)}
+
+{toast && <div className="toast">✓ &nbsp;{toast}</div>}
+</div>;
 }
 
 function LoginScreen({ onLogin }) {
@@ -330,7 +406,12 @@ function LoginScreen({ onLogin }) {
     onLogin(selectedRole, account.name);
   };
   return <div className="login-screen"><form className="login-card" onSubmit={submitLogin}>
-    <div className="login-brand"><div className="brand-mark"><span></span><span></span><span></span></div><div><b>Sentra</b><small>EXPENSE GOVERNANCE</small></div></div>
+    <div className="login-brand">
+      <BrandLogo size="large" />
+      <small className="login-brand-tagline">
+        EXPENSE GOVERNANCE
+      </small>
+    </div>
     <div className="login-intro"><span className="eyebrow">GOVERNED EXPENSECLAIM AGENT</span><h1>Welcome to Sentra</h1><p>Sign in with the credentials assigned to your role.</p></div>
     <label className="login-label">SELECT YOUR PORTAL</label>
     <div className="login-roles">{roles.map(item => <button type="button" key={item.id} className={`login-role ${selectedRole === item.id ? 'selected' : ''}`} onClick={() => { setSelectedRole(item.id); setError(''); setUserId(''); setPassword(''); }}><span className="login-role-icon">{item.icon}</span><span><b>{item.title}</b><small>{item.desc}</small></span><i>{selectedRole === item.id ? '✓' : ''}</i></button>)}</div>
