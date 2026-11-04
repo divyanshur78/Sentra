@@ -28,7 +28,7 @@ function App() {
   const [chatMessages, setChatMessages] = useState([{ from: 'agent', text: 'Hi Aarav. Tell me what you need to claim, or upload your receipts to get started.' }]);
   const [decisionModal, setDecisionModal] = useState(null);
   const [decisionReason, setDecisionReason] = useState('');
-  const [judgeScores, setJudgeScores] = useState([
+  const [OwnerScores, setOwnerScores] = useState([
     { id: 'J1', title: 'Problem understanding', detail: 'Does the solution address the expense-claim governance problem?', status: 'Pending', reason: '' },
     { id: 'J2', title: 'Architecture and integration', detail: 'Are frontend, backend, agent and policy gateway responsibilities clear?', status: 'Pending', reason: '' },
     { id: 'J3', title: 'Policy enforcement', detail: 'Are expense rules consistently checked before actions are allowed?', status: 'Pending', reason: '' },
@@ -37,14 +37,19 @@ function App() {
     { id: 'J6', title: 'User experience and demo', detail: 'Is the workflow clear, usable and demonstrated end to end?', status: 'Pending', reason: '' },
   ]);
 
-  const showToast = message => { setToast(message); window.setTimeout(() => setToast(''), 2600); };
-  const login = (selectedRole, name) => {
+ 
+const showToast = message => {
+  setToast(message);
+  window.setTimeout(() => setToast(''), 2600);
+};
+
+const login = (selectedRole, name) => {
   const finalName = name.trim() || (
     selectedRole === 'Employee'
       ? 'Aarav Mehta'
       : selectedRole === 'Manager'
         ? 'Priya Kapoor'
-        : 'Judge'
+        : 'Owner'
   );
 
   setRole(selectedRole);
@@ -53,8 +58,8 @@ function App() {
   setPage(
     selectedRole === 'Manager'
       ? 'approvals'
-      : selectedRole === 'Judge'
-        ? 'judge'
+      : selectedRole === 'Owner'
+        ? 'owner'
         : 'overview'
   );
 
@@ -67,7 +72,15 @@ function App() {
         : `Hi ${finalName}. Tell me what you need to claim, or upload your receipts to get started.`
     }
   ]);
+
+  // Scroll dashboard to the top after login
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "instant"
+  });
 };
+
   const logout = () => { setRole(null); setUserName(''); setDecisionModal(null); setPage('overview'); };
   const requestClaimDecision = (id, status) => { setDecisionReason(''); setDecisionModal({ kind: 'claim', id, status, title: status === 'Approved' ? 'Approve expense claim' : 'Reject expense claim' }); };
   const saveDecision = () => {
@@ -78,14 +91,14 @@ function App() {
       setClaims(old => old.map(c => c.id === id ? { ...c, status, decisionReason: reason, decisionBy: userName } : c));
       setSelected(old => old?.id === id ? { ...old, status, decisionReason: reason, decisionBy: userName } : old);
       showToast(`Claim ${id} ${status.toLowerCase()}.`);
-    } else if (decisionModal?.kind === 'judge') {
+    } else if (decisionModal?.kind === 'owner') {
       const { id, status } = decisionModal;
-      setJudgeScores(old => old.map(item => item.id === id ? { ...item, status, reason } : item));
+      setOwnerScores(old => old.map(item => item.id === id ? { ...item, status, reason } : item));
       showToast(`${decisionModal.title} marked ${status === 'Approved' ? 'Pass' : 'Fail'}.`);
     }
     setDecisionModal(null); setDecisionReason('');
   };
-  const openJudgeDecision = (item, status) => { setDecisionReason(item.reason || ''); setDecisionModal({ kind: 'judge', id: item.id, status, title: item.title }); };
+  const openOwnerDecision = (item, status) => { setDecisionReason(item.reason || ''); setDecisionModal({ kind: 'owner', id: item.id, status, title: item.title }); };
   const runAttack = async () => {
     if (!prompt.trim()) return;
     setRunning(true); setAttackResult(null);
@@ -180,8 +193,15 @@ const sendChat = () => {
     ? [{ id: 'overview', label: 'Overview', icon: '▦' }, { id: 'claims', label: 'My expense claims', icon: '▤' }]
     : role === 'Manager'
       ? [{ id: 'approvals', label: 'Approval queue', icon: '✓' }, { id: 'claims', label: 'All expense claims', icon: '▤' }, { id: 'audit', label: 'Audit trail', icon: '◷' }]
-      : [{ id: 'judge', label: 'Evaluation matrix', icon: '☷' }, { id: 'redteam', label: 'Red-team lab', icon: '⌘' }, { id: 'audit', label: 'Audit trail', icon: '◷' }];
-  const title = page === 'overview' ? 'Overview' : page === 'claims' ? 'Expense claims' : page === 'approvals' ? 'Approval queue' : page === 'redteam' ? 'Red-team lab' : page === 'audit' ? 'Audit trail' : 'Judge evaluation';
+      : [{ id: 'owner', label: 'Evaluation matrix', icon: '☷' }, { id: 'redteam', label: 'Red-team lab', icon: '⌘' }, { id: 'audit', label: 'Audit trail', icon: '◷' }];
+  const title =
+  page === 'overview' ? 'Overview' :
+  page === 'claims' ? 'All expense claims' :
+  page === 'approvals' ? 'Approval queue' :
+  page === 'audit' ? 'Audit trail' :
+  page === 'redteam' ? 'Red-team lab' :
+  page === 'owner' ? 'Owner evaluation' :
+  'Overview';
   return <div className="app-shell">
 
 <aside className="sidebar">
@@ -240,16 +260,9 @@ const sendChat = () => {
 
   <header className="topbar">
     <div className="topbar-brand">
-      <BrandLogo size="small" />
-      <span className="topbar-divider">/</span>
       <b className="topbar-page-title">{title}</b>
     </div>
-
     <div className="top-actions">
-      <div className="system-status">
-        <i></i> Demo workspace
-      </div>
-
       <span className="role-chip">{role}</span>
 
       <button className="logout-button" onClick={logout}>
@@ -272,15 +285,10 @@ const sendChat = () => {
             ? 'Review claims that need a human decision.'
             : page === 'audit'
             ? 'A traceable record of every agent and policy action.'
-            : page === 'judge'
+            : page === 'Owner'
             ? 'Evaluate the solution using a consistent pass/fail review matrix.'
             : 'Track, review and manage submitted expense claims.'}
         </p>
-      </div>
-
-      <div className="signed-in-label">
-        <span className="online-dot"></span>
-        Signed in as <b>{userName}</b>
       </div>
     </div>
 
@@ -320,11 +328,11 @@ const sendChat = () => {
       />
     )}
 
-    {page === 'judge' && role === 'Judge' && (
-      <JudgeMatrix scores={judgeScores} onDecision={openJudgeDecision} />
+    {page === 'owner' && role === 'Owner' && (
+      <OwnerMatrix scores={OwnerScores} onDecision={openOwnerDecision} />
     )}
 
-    {page === 'redteam' && role === 'Judge' && (
+    {page === 'redteam' && role === 'Owner' && (
       <RedTeam
         prompt={prompt}
         setPrompt={setPrompt}
@@ -381,13 +389,13 @@ function LoginScreen({ onLogin }) {
   const roles = [
     { id: 'Employee', prefix: 'E', icon: '♙', title: 'Employee', desc: 'Submit and track expense claims' },
     { id: 'Manager', prefix: 'M', icon: '♜', title: 'Manager', desc: 'Review and decide on claims' },
-    { id: 'Judge', prefix: 'J', icon: '⚖', title: 'Judge / Evaluator', desc: 'Score the project evaluation matrix' },
+    { id: 'Owner', prefix: 'O', icon: '⚖', title: 'Owner', desc: 'Score the project evaluation matrix' },
   ];
   // Demo-only credentials. Replace with backend authentication before deployment.
   const demoAccounts = {
     Employee: { id: 'E1001', password: 'Emp@123', name: 'Aarav Mehta' },
     Manager: { id: 'M1001', password: 'Mgr@123', name: 'Priya Kapoor' },
-    Judge: { id: 'J1001', password: 'Judge@123', name: 'Judge' },
+    Owner: { id: 'O1001', password: 'Own@123', name: 'Owner' },
   };
   const selected = roles.find(item => item.id === selectedRole);
   const submitLogin = (event) => {
@@ -421,22 +429,22 @@ function LoginScreen({ onLogin }) {
     <input id="login-password" className="login-name-input" type="password" value={password} onChange={e => { setPassword(e.target.value); setError(''); }} placeholder="Enter your password" autoComplete="current-password" required />
     {error && <p className="login-error" role="alert">{error}</p>}
     <button className="login-submit" type="submit">Sign in as {selectedRole} <span>→</span></button>
-    <div className="login-demo-credentials"><b>Demo credentials</b><span>Employee: E1001 / Emp@123</span><span>Manager: M1001 / Mgr@123</span><span>Judge: J1001 / Judge@123</span></div>
+    <div className="login-demo-credentials"><b>Demo credentials</b><span>Employee: E1001 / Emp@123</span><span>Manager: M1001 / Mgr@123</span><span>Owner: O1001 / Own@123</span></div>
     <p className="login-demo-note">Demo authentication only. Credentials are currently checked in the frontend.</p>
   </form></div>;
 }
 
-function JudgeMatrix({ scores, onDecision }) {
+function OwnerMatrix({ scores, onDecision }) {
   const passed = scores.filter(s => s.status === 'Approved').length;
   const failed = scores.filter(s => s.status === 'Rejected').length;
   const pending = scores.length - passed - failed;
-  return <div className="judge-page"><div className="judge-summary-grid"><div className="judge-summary-card"><span>CRITERIA PASSED</span><b className="judge-green">{passed}/{scores.length}</b></div><div className="judge-summary-card"><span>CRITERIA FAILED</span><b className="judge-red">{failed}/{scores.length}</b></div><div className="judge-summary-card"><span>AWAITING REVIEW</span><b>{pending}</b></div></div><div className="panel judge-matrix-panel"><div className="panel-head"><div><h2>Evaluation matrix</h2><p>Click the tick or cross to record a decision and its justification.</p></div><span className="tiny-tag">JUDGE REVIEW</span></div><div className="judge-table-wrap"><table className="judge-table"><thead><tr><th>CRITERION</th><th>REVIEW STANDARD</th><th>DECISION</th><th>REASON</th></tr></thead><tbody>{scores.map(item => <tr key={item.id}><td><span className="judge-code">{item.id}</span><b>{item.title}</b></td><td className="judge-detail">{item.detail}</td><td><div className="judge-actions"><button title="Mark as pass" aria-label={`Pass ${item.title}`} className={`judge-tick ${item.status === 'Approved' ? 'chosen' : ''}`} onClick={() => onDecision(item, 'Approved')}>✓</button><button title="Mark as fail" aria-label={`Fail ${item.title}`} className={`judge-cross ${item.status === 'Rejected' ? 'chosen' : ''}`} onClick={() => onDecision(item, 'Rejected')}>×</button></div></td><td>{item.reason ? <span className="judge-reason-preview">{item.reason}</span> : <span className="judge-no-reason">Not reviewed</span>}</td></tr>)}</tbody></table></div><div className="judge-matrix-foot"><span>Every pass/fail decision requires a written reason.</span><span>{passed} passed · {failed} failed · {pending} pending</span></div></div><div className="judge-guidance"><b>Evaluation guidance</b><p>Use the tick when the criterion is demonstrated. Use the cross when it is missing or not adequately demonstrated. The popup requires a justification before the matrix is updated.</p></div></div>;
+  return <div className="owner-page"><div className="owner-summary-grid"><div className="owner-summary-card"><span>CRITERIA PASSED</span><b className="owner-green">{passed}/{scores.length}</b></div><div className="owner-summary-card"><span>CRITERIA FAILED</span><b className="owner-red">{failed}/{scores.length}</b></div><div className="owner-summary-card"><span>AWAITING REVIEW</span><b>{pending}</b></div></div><div className="panel owner-matrix-panel"><div className="panel-head"><div><h2>Evaluation matrix</h2><p>Click the tick or cross to record a decision and its justification.</p></div><span className="tiny-tag">OWNER REVIEW</span></div><div className="owner-table-wrap"><table className="owner-table"><thead><tr><th>CRITERION</th><th>REVIEW STANDARD</th><th>DECISION</th><th>REASON</th></tr></thead><tbody>{scores.map(item => <tr key={item.id}><td><span className="owner-code">{item.id}</span><b>{item.title}</b></td><td className="owner-detail">{item.detail}</td><td><div className="owner-actions"><button title="Mark as pass" aria-label={`Pass ${item.title}`} className={`owner-tick ${item.status === 'Approved' ? 'chosen' : ''}`} onClick={() => onDecision(item, 'Approved')}>✓</button><button title="Mark as fail" aria-label={`Fail ${item.title}`} className={`owner-cross ${item.status === 'Rejected' ? 'chosen' : ''}`} onClick={() => onDecision(item, 'Rejected')}>×</button></div></td><td>{item.reason ? <span className="owner-reason-preview">{item.reason}</span> : <span className="owner-no-reason">Not reviewed</span>}</td></tr>)}</tbody></table></div><div className="owner-matrix-foot"><span>Every pass/fail decision requires a written reason.</span><span>{passed} passed · {failed} failed · {pending} pending</span></div></div><div className="owner-guidance"><b>Evaluation guidance</b><p>Use the tick when the criterion is demonstrated. Use the cross when it is missing or not adequately demonstrated. The popup requires a justification before the matrix is updated.</p></div></div>;
 }
 
 function DecisionModal({ modal, reason, setReason, onClose, onSave }) {
-  const isJudge = modal.kind === 'judge';
+  const isOwner = modal.kind === 'owner';
   const positive = modal.status === 'Approved';
-  return <div className="modal-backdrop" onClick={onClose}><div className="decision-modal" onClick={e => e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">{isJudge ? 'JUDGE EVALUATION' : 'MANAGER DECISION'}</span><h2>{modal.title}</h2></div><button onClick={onClose}>×</button></div><div className={`decision-banner ${positive ? 'positive' : 'negative'}`}><span>{positive ? '✓' : '×'}</span><div><b>{isJudge ? (positive ? 'Mark criterion as passed' : 'Mark criterion as failed') : (positive ? 'Approve this claim' : 'Reject this claim')}</b><small>{isJudge ? modal.id : `Claim ${modal.id}`}</small></div></div><label className="decision-label" htmlFor="decision-reason">REASON / JUSTIFICATION <span>REQUIRED</span></label><textarea id="decision-reason" className="decision-textarea" rows="5" value={reason} onChange={e => setReason(e.target.value)} placeholder={isJudge ? 'Explain what evidence supports this evaluation...' : 'Explain why this claim is approved or rejected...'} /><div className="decision-hint">This explanation will be displayed with the recorded decision in this demo.</div><div className="decision-modal-actions"><button className="outline-button" onClick={onClose}>Cancel</button><button className={positive ? 'approve-button' : 'reject-button'} disabled={!reason.trim()} onClick={onSave}>Save decision</button></div></div></div>;
+  return <div className="modal-backdrop" onClick={onClose}><div className="decision-modal" onClick={e => e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">{isOwner ? 'OWNEREVALUATION' : 'MANAGER DECISION'}</span><h2>{modal.title}</h2></div><button onClick={onClose}>×</button></div><div className={`decision-banner ${positive ? 'positive' : 'negative'}`}><span>{positive ? '✓' : '×'}</span><div><b>{isOwner ? (positive ? 'Mark criterion as passed' : 'Mark criterion as failed') : (positive ? 'Approve this claim' : 'Reject this claim')}</b><small>{isOwner ? modal.id : `Claim ${modal.id}`}</small></div></div><label className="decision-label" htmlFor="decision-reason">REASON / JUSTIFICATION <span>REQUIRED</span></label><textarea id="decision-reason" className="decision-textarea" rows="5" value={reason} onChange={e => setReason(e.target.value)} placeholder={isOwner ? 'Explain what evidence supports this evaluation...' : 'Explain why this claim is approved or rejected...'} /><div className="decision-hint">This explanation will be displayed with the recorded decision in this demo.</div><div className="decision-modal-actions"><button className="outline-button" onClick={onClose}>Cancel</button><button className={positive ? 'approve-button' : 'reject-button'} disabled={!reason.trim()} onClick={onSave}>Save decision</button></div></div></div>;
 }
 
 function AssistantPanel({

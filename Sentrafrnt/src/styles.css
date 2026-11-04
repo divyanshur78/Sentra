@@ -1700,3 +1700,522 @@ tr:hover td {
     padding: 14px 12px;
   }
 }
+
+/* Sentra branding in dashboard top navbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.topbar-brand .brand-logo-image {
+  width: 42px;
+  height: 42px;
+}
+
+.topbar-brand .brand-logo-text {
+  color: #263149;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.topbar-divider {
+  color: #a0a8b7;
+  font-size: 20px;
+}
+
+.topbar-page-title {
+  color: #263149;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Login page logo and name */
+.login-brand {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 13px;
+}
+
+.login-brand .brand-logo-image {
+  width: 78px;
+  height: 78px;
+}
+
+.login-brand .brand-logo-text {
+  color: #252d45;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.login-brand-tagline {
+  flex-basis: 100%;
+  margin: -7px 0 0 90px;
+  color: #9ba3b2;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+/* Mobile navbar */
+@media (max-width: 700px) {
+  .topbar {
+    padding: 0 16px;
+    gap: 10px;
+  }
+
+  .topbar-brand .brand-logo-image {
+    width: 34px;
+    height: 34px;
+  }
+
+  .topbar-brand .brand-logo-text {
+    font-size: 20px;
+  }
+
+  .topbar-brand {
+    gap: 8px;
+  }
+
+  .top-actions {
+    gap: 10px;
+  }
+}
+
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.brand-logo-text {
+  font-size: 24px;
+  font-weight: 800;
+  color: #f5f5f0;
+}
+
+.brand-logo-small .brand-logo-image {
+  width: 38px;
+  height: 38px;
+}
+
+.brand-logo-small .brand-logo-text {
+  font-size: 21px;
+}
+
+.brand-logo-large .brand-logo-image {
+  width: 78px;
+  height: 78px;
+}
+
+.brand-logo-large .brand-logo-text {
+  font-size: 32px;
+  color: #252d45;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-brand .brand-logo-text {
+  color: #263149;
+}
+
+.topbar-divider {
+  color: #a0a8b7;
+}
+
+.topbar-page-title {
+  color: #3b4559;
+  font-size: 13px;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.login-brand-tagline {
+  flex-basis: 100%;
+  margin-left: 88px;
+  margin-top: -8px;
+  color: #9ba3b2;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #ffffff;
+}
+
+/* =================================
+   SENTRA - IMPROVED TEXT READABILITY
+================================= */
+
+html {
+  font-size: 17px;
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Main headings */
+h1 {
+  font-size: 34px;
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: 27px;
+}
+
+h3 {
+  font-size: 21px;
+}
+
+/* Navigation and buttons */
+.nav-item,
+button {
+  font-size: 16px;
+}
+
+.topbar,
+.topbar-brand,
+.top-actions {
+  font-size: 16px;
+}
+
+/* Labels and descriptions */
+small,
+.eyebrow,
+.workspace-label,
+.signed-in-label,
+.role-chip {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Input fields and text areas */
+input,
+textarea,
+select {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Red-team test content */
+textarea {
+  min-height: 150px;
+}
+
+.attack-coverage,
+.attack-coverage *,
+.redteam,
+.redteam * {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Audit trail readability */
+.audit,
+.audit *,
+.audit-trail,
+.audit-trail * {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* Tables and claim details */
+table,
+th,
+td {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   SENTRA OWNER EVALUATION — LAYOUT FIX
+========================================= */
+
+.owner-page {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Summary cards */
+.owner-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 2px;
+}
+
+.owner-summary-card {
+  background: #ffffff;
+  border: 1px solid #e1ece7;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(20, 65, 52, 0.04);
+}
+
+.owner-summary-card span {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  color: #788e86;
+}
+
+.owner-summary-card b {
+  display: block;
+  font-size: 27px;
+  margin-top: 8px;
+  color: #243b35;
+}
+
+.owner-summary-card .owner-green {
+  color: #159879;
+}
+
+.owner-summary-card .owner-red {
+  color: #dc4545;
+}
+
+/* Evaluation panel */
+.owner-matrix-panel {
+  padding: 24px;
+  overflow: hidden;
+}
+
+.owner-matrix-panel .panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.owner-matrix-panel .panel-head h2 {
+  font-size: 21px;
+  margin: 0 0 7px;
+  color: #183b32;
+}
+
+.owner-matrix-panel .panel-head p {
+  font-size: 15px;
+  margin: 0;
+  color: #788e86;
+}
+
+.owner-matrix-panel .tiny-tag {
+  background: #eff9f5;
+  color: #159879;
+  padding: 10px 13px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Table */
+.owner-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.owner-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.owner-table th {
+  background: #f5faf7;
+  color: #788e86;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-align: left;
+  padding: 16px 13px;
+  border-bottom: 1px solid #e1ece7;
+}
+
+.owner-table td {
+  padding: 17px 13px;
+  border-bottom: 1px solid #e1ece7;
+  font-size: 15px;
+  line-height: 1.6;
+  vertical-align: middle;
+  color: #243b35;
+}
+
+.owner-table td:first-child {
+  min-width: 230px;
+}
+
+.owner-code {
+  display: inline-block;
+  margin-right: 9px;
+  color: #159879;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.owner-table td:first-child b {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.owner-detail {
+  color: #667c73;
+  min-width: 280px;
+  max-width: 420px;
+}
+
+/* Decision buttons */
+.owner-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.owner-tick,
+.owner-cross {
+  width: 38px;
+  height: 38px;
+  border-radius: 7px;
+  border: 1px solid #dfe9e4;
+  background: #ffffff;
+  font-size: 19px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.owner-tick {
+  color: #159879;
+}
+
+.owner-cross {
+  color: #dc4545;
+}
+
+.owner-tick.chosen {
+  background: #e0f4ed;
+  border-color: #159879;
+}
+
+.owner-cross.chosen {
+  background: #fff0f0;
+  border-color: #dc4545;
+}
+
+/* Reason column */
+.owner-reason-preview {
+  display: block;
+  max-width: 230px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #667c73;
+}
+
+.owner-no-reason {
+  font-size: 13px;
+  color: #9aa9a2;
+}
+
+/* Matrix footer */
+.owner-matrix-foot {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 17px;
+  font-size: 13px;
+  color: #788e86;
+}
+
+/* Evaluation guidance */
+.owner-guidance {
+  background: #eff9f5;
+  border: 1px solid #d7ece2;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.owner-guidance b {
+  font-size: 15px;
+  color: #10765f;
+}
+
+.owner-guidance p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 7px 0 0;
+  color: #667c73;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .owner-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-matrix-panel {
+    padding: 15px;
+  }
+
+  .owner-matrix-panel .panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .owner-matrix-foot {
+    flex-direction: column;
+  }
+}
+/* Slightly enlarge the main Sentra navbar logo */
+.topbar .brand-logo-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+/* Top navigation page title */
+.topbar-page-title {
+  font-size: 23px !important;
+  font-weight: 700;
+  color: #263247;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+}
+
+/* Keep title properly aligned */
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
