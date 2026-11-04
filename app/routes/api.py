@@ -9,7 +9,7 @@ from app.services.claim_service import create_draft,get_claim,submit_claim,manag
 from app.services.memory_service import get_employee_memory
 from app.services.policy_rules import RULES,check_employee_scope
 from app.integrations.provider import get_governance
-
+from app.schemas import LoginRequest, ChatRequest, DraftClaimRequest, SubmitRequest, DecisionRequest, RedTeamRequest, ToolCall
 router=APIRouter(prefix="/api")
 
 @router.post("/auth/login")
@@ -37,10 +37,23 @@ def draft(body: DraftClaimRequest):
     except ValueError as e: raise HTTPException(400,str(e))
 
 @router.get("/claims/{claim_id}")
-def claim_detail(claim_id: str,requester_id: str):
-    claim=get_claim(claim_id)
-    if not claim: raise HTTPException(404,"Claim not found")
-    if check_employee_scope(requester_id,claim["employee_id"])["decision"]=="DENIED": raise HTTPException(403,"R8: access denied")
+def claim_detail(claim_id: str, requester_id: str):
+    claim = get_claim(claim_id)
+    if not claim:
+        raise HTTPException(404, "Claim not found")
+
+    decision = get_governance().authorize_tool_call(
+        ToolCall(
+            actor_id=requester_id,
+            tool_name="claim_detail",
+            action="read",
+            claim_id=claim_id,
+        )
+    )
+
+    if decision.decision != "ALLOWED":
+        raise HTTPException(403, detail="R8: access denied")
+
     return claim
 
 @router.post("/claims/{claim_id}/submit")

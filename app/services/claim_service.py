@@ -65,30 +65,121 @@ def submit_claim(cid,employee_id,confirmation=True):
     get_governance().record_event("CLAIM_SUBMITTED","Claim submitted to mock ERP",actor_id=employee_id,claim_id=cid,payload=rules)
     return {"claim":get_claim(cid),"policy":rules,"message":"Claim submitted"}
 
-def manager_decision(cid,manager_id,approve,reason=""):
+def manager_decision(cid, manager_id, approve, reason=""):
     with get_db() as db:
-        row=db.execute("SELECT * FROM claims WHERE id=?",(cid,)).fetchone()
-        if not row: raise ValueError("Claim not found")
-        access=check_manager_assignment(manager_id,row)
-        if access["decision"]=="DENIED": raise PermissionError(access["reasons"][0])
-        if row["status"]!="PENDING_APPROVAL": raise ValueError("Claim is not awaiting approval")
-        items=loads(row["items_json"],[]); rules=evaluate_claim_rules(db,row,items)
-        if approve and (rules["decision"]=="DENIED" or not any(x.get("receipt_id") for x in items)):
-            raise ValueError("R7: claim with missing receipt or blocked rule cannot be approved")
-        status="APPROVED" if approve else "REJECTED"
-        db.execute("UPDATE claims SET status=?,decision_reason=?,updated_at=? WHERE id=?",(status,reason,now_iso(),cid))
-        db.execute("UPDATE approvals SET status=?,reason=?,decided_at=? WHERE claim_id=? AND status='PENDING'",(status,reason,now_iso(),cid))
-    get_governance().record_event("MANAGER_APPROVED" if approve else "MANAGER_REJECTED",f"Manager {status.lower()} claim",actor_id=manager_id,claim_id=cid,payload={"reason":reason})
+        row = db.execute(
+            "SELECT * FROM claims WHERE id=?", (cid,)
+        ).fetchone()
+
+        if not row:
+            raise ValueError("Claim not found")
+
+        access = check_manager_assignment(manager_id, row)
+        if access["decision"] == "DENIED":
+            raise PermissionError(access["reasons"][0])
+
+        if row["status"] != "PENDING_APPROVAL":
+            raise ValueError("Claim is not awaiting approval")
+
+        items = loads(row["items_json"], [])
+        rules = evaluate_claim_rules(db, row, items)
+
+        if approve and (
+            rules["decision"] == "DENIED"
+            or not any(x.get("receipt_id") for x in items)
+        ):
+            raise ValueError(
+                "R7: claim with missing receipt or blocked rule cannot be approved"
+            )
+
+    # Person 3 governance authorization before changing claim status.
+    gateway = get_governance().authorize_tool_call(
+        ToolCall(
+            actor_id=manager_id,
+            tool_name="manager_decision",
+            action="approve" if approve else "reject",
+            claim_id=cid,
+        )
+    )
+
+    if gateway.decision != "ALLOWED":
+        raise PermissionError(
+            f"Governance {gateway.decision}: {'; '.join(gateway.reasons)}"
+        )
+
+    status = "APPROVED" if approve else "REJECTED"
+
+    with get_db() as db:
+        db.execute(
+            "UPDATE claims SET status=?,decision_reason=?,updated_at=? WHERE id=?",
+            (status, reason, now_iso(), cid),
+        )
+        db.execute(
+            """UPDATE approvals SET status=?,reason=?,decided_at=?
+               WHERE claim_id=? AND status='PENDING'""",
+            (status, reason, now_iso(), cid),
+        )
+
+    get_governance().record_event(
+        "MANAGER_APPROVED" if approve else "MANAGER_REJECTED",
+        f"Manager {status.lower()} claim",
+        actor_id=manager_id,
+        claim_id=cid,
+        payload={"reason": reason},
+    )
+
     return get_claim(cid)
 
-def finalize_approved_claim(cid,manager_id):
+def finalize_approved_claim(cid, manager_id):
     with get_db() as db:
-        row=db.execute("SELECT * FROM claims WHERE id=?",(cid,)).fetchone()
-        if not row: raise ValueError("Claim not found")
-        if row["status"]!="APPROVED": raise ValueError("Claim must be manager-approved first")
-        if row["manager_id"]!=manager_id: raise PermissionError("R9: unauthorized manager")
-        rules=evaluate_claim_rules(db,row,loads(row["items_json"],[]))
-        if rules["decision"]=="DENIED": raise ValueError("Final policy check failed")
-        db.execute("UPDATE claims SET status='SUBMITTED',submitted_at=?,updated_at=? WHERE id=?",(now_iso(),now_iso(),cid))
-    get_governance().record_event("CLAIM_SUBMITTED","Approved claim submitted to mock ERP",actor_id=manager_id,claim_id=cid,payload=rules)
+        row = db.execute(
+            "SELECT * FROM claims WHERE id=?", (cid,)
+        ).fetchone()
+
+        if not row:
+            raise ValueError("Claim not found")
+
+        if row["status"] != "APPROVED":
+            raise ValueError("Claim must be manager-approved first")
+
+        if row["manager_id"] != manager_id:
+            raise PermissionError("R9: unauthorized manager")
+
+        rules = evaluate_claim_rules(
+            db, row, loads(row["items_json"], [])
+        )
+
+        if rules["decision"] == "DENIED":
+            raise ValueError("Final policy check failed")
+
+    # P3 governance authorization before final submission.
+    gateway = get_governance().authorize_tool_call(
+        ToolCall(
+            actor_id=manager_id,
+            tool_name="finalize_approved_claim",
+            action="finalize",
+            claim_id=cid,
+        )
+    )
+
+    if gateway.decision != "ALLOWED":
+        raise PermissionError(
+            f"Governance {gateway.decision}: {'; '.join(gateway.reasons)}"
+        )
+
+    with get_db() as db:
+        db.execute(
+            """UPDATE claims SET status='SUBMITTED',
+               submitted_at=?,updated_at=? WHERE id=?""",
+            (now_iso(), now_iso(), cid),
+        )
+
+    get_governance().record_event(
+        "CLAIM_SUBMITTED",
+        "Approved claim submitted to mock ERP",
+        actor_id=manager_id,
+        claim_id=cid,
+        payload=rules,
+    )
+
     return get_claim(cid)
