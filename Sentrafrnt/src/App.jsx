@@ -15,6 +15,7 @@ const nav = [
 function App() {
   const [role, setRole] = useState(null);
   const [userName, setUserName] = useState('');
+  const [userId, setUserId] = useState('');
   const [page, setPage] = useState('overview');
   const [claims, setClaims] = useState(initialClaims);
   const [selected, setSelected] = useState(null);
@@ -43,17 +44,15 @@ const showToast = message => {
   window.setTimeout(() => setToast(''), 2600);
 };
 
-const login = (selectedRole, name) => {
-  const finalName = name.trim() || (
-    selectedRole === 'Employee'
-      ? 'Aarav Mehta'
-      : selectedRole === 'Manager'
-        ? 'Priya Kapoor'
-        : 'Owner'
-  );
+const login = (selectedRole, user) => {
+  const finalName = user.name || 'Sentra User';
 
   setRole(selectedRole);
   setUserName(finalName);
+  setUserId(user.id || '');
+
+  setClaims([]);
+  setSelected(null);
 
   setPage(
     selectedRole === 'Manager'
@@ -67,21 +66,25 @@ const login = (selectedRole, name) => {
   setChatMessages([
     {
       from: 'agent',
-      text: selectedRole === 'Manager'
-        ? `Hi ${finalName}. I can help you understand expense policies and review approval workflows.`
-        : `Hi ${finalName}. Tell me what you need to claim, or upload your receipts to get started.`
+      text: `Hi ${finalName}. Sentra AI is ready. How can I help?`
     }
   ]);
 
-  // Scroll dashboard to the top after login
   window.scrollTo({
     top: 0,
     left: 0,
-    behavior: "instant"
+    behavior: 'instant'
   });
 };
-
-  const logout = () => { setRole(null); setUserName(''); setDecisionModal(null); setPage('overview'); };
+  const logout = () => {
+  setRole(null);
+  setUserName('');
+  setUserId('');
+  setClaims(initialClaims);
+  setSelected(null);
+  setDecisionModal(null);
+  setPage('overview');
+};
   const requestClaimDecision = (id, status) => { setDecisionReason(''); setDecisionModal({ kind: 'claim', id, status, title: status === 'Approved' ? 'Approve expense claim' : 'Reject expense claim' }); };
   const saveDecision = () => {
     const reason = decisionReason.trim();
@@ -381,58 +384,183 @@ const sendChat = () => {
 </div>;
 }
 
+
 function LoginScreen({ onLogin }) {
-  const [userId, setUserId] = useState('');
+  const [userId, setInputUserId] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('Employee');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const roles = [
     { id: 'Employee', prefix: 'E', icon: '♙', title: 'Employee', desc: 'Submit and track expense claims' },
     { id: 'Manager', prefix: 'M', icon: '♜', title: 'Manager', desc: 'Review and decide on claims' },
     { id: 'Owner', prefix: 'O', icon: '⚖', title: 'Owner', desc: 'Score the project evaluation matrix' },
   ];
-  // Demo-only credentials. Replace with backend authentication before deployment.
-  const demoAccounts = {
-    Employee: { id: 'E1001', password: 'Emp@123', name: 'Aarav Mehta' },
-    Manager: { id: 'M1001', password: 'Mgr@123', name: 'Priya Kapoor' },
-    Owner: { id: 'O1001', password: 'Own@123', name: 'Owner' },
-  };
+
   const selected = roles.find(item => item.id === selectedRole);
-  const submitLogin = (event) => {
+
+  const submitLogin = async (event) => {
     event.preventDefault();
-    const normalizedId = userId.trim().toUpperCase();
-    if (!normalizedId.startsWith(selected.prefix)) {
-      setError(`${selectedRole} user IDs must start with ${selected.prefix.toLowerCase()}.`);
-      return;
-    }
-    const account = demoAccounts[selectedRole];
-    if (normalizedId !== account.id || password !== account.password) {
-      setError('Invalid user ID or password for the selected portal.');
-      return;
-    }
     setError('');
-    onLogin(selectedRole, account.name);
+    setLoading(true);
+
+    try {
+      if (selectedRole === 'Owner') {
+        if (userId.trim().toUpperCase() !== 'O1001' || password !== 'Own@123') {
+          throw new Error('Invalid Owner credentials.');
+        }
+
+        onLogin('Owner', {
+          id: 'O1001',
+          name: 'Owner'
+        });
+        return;
+      }
+
+      const result = await api.login(userId.trim().toLowerCase());
+
+      if (!result?.user) {
+        throw new Error('Backend did not return a valid user.');
+      }
+
+      const actualRole =
+        result.user.role.toLowerCase() === 'employee'
+          ? 'Employee'
+          : result.user.role.toLowerCase() === 'manager'
+            ? 'Manager'
+            : null;
+
+      if (!actualRole || actualRole !== selectedRole) {
+        throw new Error('This account does not belong to the selected portal.');
+      }
+
+      onLogin(actualRole, result.user);
+
+    } catch (err) {
+      setError(err.message || 'Unable to connect to backend.');
+    } finally {
+      setLoading(false);
+    }
   };
-  return <div className="login-screen"><form className="login-card" onSubmit={submitLogin}>
-    <div className="login-brand">
-      <BrandLogo size="large" />
-      <small className="login-brand-tagline">
-        EXPENSE GOVERNANCE
-      </small>
+
+  return (
+    <div className="login-screen">
+      <form className="login-card" onSubmit={submitLogin}>
+        <div className="login-brand">
+          <BrandLogo size="large" />
+          <small className="login-brand-tagline">
+            EXPENSE GOVERNANCE
+          </small>
+        </div>
+
+        <div className="login-intro">
+          <span className="eyebrow">GOVERNED EXPENSECLAIM AGENT</span>
+          <h1>Welcome to Sentra</h1>
+          <p>Sign in with the credentials assigned to your role.</p>
+        </div>
+
+        <label className="login-label">SELECT YOUR PORTAL</label>
+
+        <div className="login-roles">
+          {roles.map(item => (
+            <button
+              type="button"
+              key={item.id}
+              className={`login-role ${selectedRole === item.id ? 'selected' : ''}`}
+              onClick={() => {
+                setSelectedRole(item.id);
+                setError('');
+                setInputUserId('');
+                setPassword('');
+              }}
+            >
+              <span className="login-role-icon">{item.icon}</span>
+              <span>
+                <b>{item.title}</b>
+                <small>{item.desc}</small>
+              </span>
+              <i>{selectedRole === item.id ? '✓' : ''}</i>
+            </button>
+          ))}
+        </div>
+
+        <label className="login-label" htmlFor="login-user-id">
+          USER ID
+          <span className="login-prefix-hint">
+            {selectedRole === 'Owner'
+              ? 'Owner account'
+              : 'Backend account ID'}
+          </span>
+        </label>
+
+        <input
+          id="login-user-id"
+          className="login-name-input"
+          value={userId}
+          onChange={e => {
+            setInputUserId(e.target.value);
+            setError('');
+          }}
+          placeholder={
+            selectedRole === 'Employee'
+              ? 'emp-001'
+              : selectedRole === 'Manager'
+                ? 'mgr-001'
+                : 'O1001'
+          }
+          autoComplete="username"
+          required
+        />
+
+        <label className="login-label" htmlFor="login-password">
+          PASSWORD
+        </label>
+
+        <input
+          id="login-password"
+          className="login-name-input"
+          type="password"
+          value={password}
+          onChange={e => {
+            setPassword(e.target.value);
+            setError('');
+          }}
+          placeholder="Enter your password"
+          required
+        />
+
+        {error && (
+          <p className="login-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <button
+          className="login-submit"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? 'Connecting...' : `Sign in as ${selectedRole}`}
+          <span>→</span>
+        </button>
+
+        <div className="login-demo-credentials">
+          <b>Backend demo accounts</b>
+          <span>Employee: emp-001 / emp-002</span>
+          <span>Manager: mgr-001 / mgr-002</span>
+          <span>Owner: O1001 / Own@123</span>
+        </div>
+
+        <p className="login-demo-note">
+          Employee and Manager authentication uses the backend demo login.
+          Password verification is not implemented by the backend yet.
+        </p>
+      </form>
     </div>
-    <div className="login-intro"><span className="eyebrow">GOVERNED EXPENSECLAIM AGENT</span><h1>Welcome to Sentra</h1><p>Sign in with the credentials assigned to your role.</p></div>
-    <label className="login-label">SELECT YOUR PORTAL</label>
-    <div className="login-roles">{roles.map(item => <button type="button" key={item.id} className={`login-role ${selectedRole === item.id ? 'selected' : ''}`} onClick={() => { setSelectedRole(item.id); setError(''); setUserId(''); setPassword(''); }}><span className="login-role-icon">{item.icon}</span><span><b>{item.title}</b><small>{item.desc}</small></span><i>{selectedRole === item.id ? '✓' : ''}</i></button>)}</div>
-    <label className="login-label" htmlFor="login-user-id">USER ID <span className="login-prefix-hint">Must start with {selected.prefix.toLowerCase()}</span></label>
-    <input id="login-user-id" className="login-name-input" value={userId} onChange={e => { setUserId(e.target.value); setError(''); }} placeholder={`${selected.prefix.toLowerCase()}1001`} autoComplete="username" required />
-    <label className="login-label" htmlFor="login-password">PASSWORD</label>
-    <input id="login-password" className="login-name-input" type="password" value={password} onChange={e => { setPassword(e.target.value); setError(''); }} placeholder="Enter your password" autoComplete="current-password" required />
-    {error && <p className="login-error" role="alert">{error}</p>}
-    <button className="login-submit" type="submit">Sign in as {selectedRole} <span>→</span></button>
-    <div className="login-demo-credentials"><b>Demo credentials</b><span>Employee: E1001 / Emp@123</span><span>Manager: M1001 / Mgr@123</span><span>Owner: O1001 / Own@123</span></div>
-    <p className="login-demo-note">Demo authentication only. Credentials are currently checked in the frontend.</p>
-  </form></div>;
+  );
 }
+
 
 function OwnerMatrix({ scores, onDecision }) {
   const passed = scores.filter(s => s.status === 'Approved').length;
