@@ -1,7 +1,9 @@
 import re
 import io
+import subprocess
+import tempfile
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 try:
     import fitz
@@ -19,42 +21,50 @@ from app.utils import new_id, now_iso
 
 
 def ocr_image_pil(img: Image.Image) -> str:
-    """Extracts text from a photo/image using Windows 10/11 Native OCR or pytesseract."""
-    # 1. Try Windows 10/11 Native Media OCR
+    """Extracts text from a photo/image using Windows 10/11 Native OCR via PowerShell, or pytesseract."""
+    # 1. Try Windows 10/11 Native Media OCR via PowerShell
     try:
-        import winrt.windows.media.ocr as ocr
-        import winrt.windows.globalization as glob
-        import winrt.windows.graphics.imaging as imaging
-        import winrt.windows.storage.streams as streams
+        script_path = Path(__file__).parent.parent / "utils" / "win_ocr.ps1"
+        if script_path.exists():
+            w, h = img.width, img.height
+            proc_img = img
 
-        # Limit max dimension for fast processing
-        w, h = img.width, img.height
-        max_dim = 2400
-        if max(w, h) > max_dim:
-            scale = max_dim / max(w, h)
-            img = img.resize((int(w * scale), int(h * scale)), Image.Resampling.LANCZOS)
+            # Optimize dimensions for OCR accuracy:
+            # - If small (< 1000px), scale up so periods, commas, and small numbers aren't lost
+            # - If excessively large (> 2400px), downscale for fast OCR throughput
+            if max(w, h) > 2400:
+                scale = 2400 / max(w, h)
+                proc_img = proc_img.resize((int(w * scale), int(h * scale)), Image.Resampling.LANCZOS)
+            elif max(w, h) < 1000:
+                scale = min(2.5, 1200 / max(w, h))
+                proc_img = proc_img.resize((int(w * scale), int(h * scale)), Image.Resampling.LANCZOS)
 
-        rgba_img = img.convert('RGBA')
-        writer = streams.DataWriter()
-        writer.write_bytes(rgba_img.tobytes())
-        sb = imaging.SoftwareBitmap.create_copy_from_buffer(
-            writer.detach_buffer(),
-            imaging.BitmapPixelFormat.RGBA8,
-            rgba_img.width,
-            rgba_img.height
-        )
+            # Enhance contrast slightly to make black-on-white text crisp
+            try:
+                proc_img = ImageEnhance.Contrast(proc_img.convert("RGB")).enhance(1.4)
+            except Exception:
+                proc_img = proc_img.convert("RGB")
 
-        eng = ocr.OcrEngine.try_create_from_language(glob.Language('en-US'))
-        if not eng:
-            eng = ocr.OcrEngine.try_create_from_user_profile_languages()
-
-        if eng:
-            op = eng.recognize_async(sb)
-            res = op.get()
-            if res and res.lines:
-                lines = [line.text.strip() for line in res.lines if line.text.strip()]
-                if lines:
-                    return "\n".join(lines)
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tf:
+                temp_path = Path(tf.name)
+            try:
+                proc_img.save(temp_path, format="PNG")
+                cmd = [
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy", "Bypass",
+                    "-File", str(script_path),
+                    "-ImagePath", str(temp_path)
+                ]
+                res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=15)
+                if res.returncode == 0 and res.stdout.strip():
+                    return res.stdout.strip()
+            finally:
+                if temp_path.exists():
+                    try:
+                        temp_path.unlink()
+                    except Exception:
+                        pass
     except Exception:
         pass
 
@@ -116,8 +126,7 @@ def extract_text(data: bytes, filename: str) -> str:
     # 1. PDF Documents
     if suffix == ".pdf":
         pdf_text = extract_text_from_pdf(data)
-        if pdf_text.strip():
-            return pdf_text.strip()
+        return pdf_text.strip() if pdf_text else ""
 
     # 2. Photo / Image receipts
     if suffix in {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}:
@@ -128,15 +137,24 @@ def extract_text(data: bytes, filename: str) -> str:
                 return img_text.strip()
         except Exception:
             pass
+        return ""
 
     # 3. Plain text / fallback
-    return data.decode("utf-8", errors="ignore")
+    try:
+        return data.decode("utf-8", errors="ignore").strip()
+    except Exception:
+        return ""
 
 
 def classify_category(text: str) -> str:
     t = text.lower()
-    # Alcohol check (strictly non-reimbursable)
-    if any(x in t for x in ["alcohol", "wine", "beer", "whiskey", "vodka", "spirits", "liquor", "cocktail", "pub", "bar "]):
+    # Alcohol check (strictly non-reimbursable) - use word boundaries to avoid false positives (e.g. 'forum' matching 'rum', 'engine' matching 'gin')
+    alcohol_patterns = [
+        r'\balcohol\b', r'\bwine\b', r'\bbeer\b', r'\bwhiskey\b', r'\bwhisky\b',
+        r'\bvodka\b', r'\bspirits\b', r'\bliquor\b', r'\bcocktail\b', r'\bpub\b',
+        r'\bbrewery\b', r'\btavern\b', r'\bscotch\b', r'\brum\b', r'\bgin\b'
+    ]
+    if any(re.search(pat, t) for pat in alcohol_patterns):
         return "alcohol"
     # Meal / Dining
     if any(x in t for x in ["restaurant", "cafe", "coffee", "tea", "dinner", "lunch", "food", "meal", "breakfast", "caffe", "pizza", "burger", "bakery", "kitchen", "swiggy", "zomato"]):
@@ -160,8 +178,21 @@ def classify_category(text: str) -> str:
 
 
 def parse_receipt(text: str) -> dict:
-    """Parses extracted receipt text to find vendor, total amount, expense date, and category."""
-    lines = [x.strip() for x in text.splitlines() if x.strip()]
+    """Parses extracted receipt text to find vendor, final total amount, expense date, and category."""
+    if not text or not text.strip():
+        return {
+            "vendor": "Unknown vendor",
+            "date": None,
+            "amount": None,
+            "category": "other",
+            "confidence": 0.0
+        }
+
+    # Normalize common OCR character confusions on numbers & decimals (e.g. .OO -> .00)
+    cleaned_text = re.sub(r'(\d+)\.([Oo0]{2})\b', r'\1.00', text)
+    cleaned_text = re.sub(r'(?:INR|RS\.?|₹)\s*(\d+)\.([Oo0]{2})\b', r'INR \1.00', cleaned_text, flags=re.I)
+
+    lines = [x.strip() for x in cleaned_text.splitlines() if x.strip()]
     if not lines:
         return {
             "vendor": "Unknown vendor",
@@ -192,58 +223,99 @@ def parse_receipt(text: str) -> dict:
     if vendor == "Unknown vendor" and lines:
         vendor = lines[0][:60]
 
-    # 2. Extract Total Amount
+    # 2. Extract Final Total Amount (NOT individual item amounts!)
     amount = None
+    num_pat = r'(?<![0-9])([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2}))(?![0-9])'
 
-    # Priority A: Lines with explicit total / net amount / amount paid keywords
-    total_line_patterns = [
-        r'(?:GRAND\s*TOTAL|FINAL\s*TOTAL|NET\s*AMOUNT|TOTAL\s*AMOUNT|TOTAL\s*DUE|AMOUNT\s*PAID|BALANCE|TOTAL)[\s:=-]+(?:₹|INR|RS\.?|\$)?\s*([0-9,]+(?:\.[0-9]{1,2})?)',
-        r'(?:TOTAL|AMOUNT)[\s:=-]+([0-9,]+(?:\.[0-9]{1,2})?)',
+    # Priority A: Look for explicit Grand Total / Net Payable / Final Total lines
+    high_priority_keywords = [
+        'GRAND TOTAL', 'FINAL TOTAL', 'NET PAYABLE', 'TOTAL PAYABLE',
+        'NET AMOUNT', 'TOTAL DUE', 'BILL TOTAL', 'INVOICE TOTAL',
+        'AMOUNT DUE', 'AMOUNT PAID', 'TOTAL AMOUNT'
     ]
-    for pattern in total_line_patterns:
-        matches = re.findall(pattern, text, re.I)
-        if matches:
-            for m in reversed(matches):
-                try:
-                    val = float(m.replace(',', ''))
+    for i, line in enumerate(lines):
+        line_upper = line.upper()
+        if any(k in line_upper for k in high_priority_keywords):
+            if any(x in line_upper for x in ['TOTAL QTY', 'TOTAL ITEMS', 'TOTAL COUNT', 'TOTAL DISCOUNT']):
+                continue
+            m = re.findall(num_pat, line)
+            if m:
+                val = float(m[-1].replace(',', ''))
+                if val > 0:
+                    amount = val
+                    break
+            # If the keyword was on its own line, check the next line
+            if i + 1 < len(lines):
+                next_line = lines[i + 1]
+                m_next = re.findall(num_pat, next_line)
+                if m_next and not any(k in next_line.upper() for k in ['DATE', 'INVOICE', 'GST', 'TAX', 'THANK']):
+                    val = float(m_next[-1].replace(',', ''))
                     if val > 0:
                         amount = val
                         break
-                except ValueError:
-                    pass
-        if amount is not None:
-            break
 
-    # Priority B: Explicit currency symbols (₹, INR, Rs., $)
+    # Priority B: Standard 'TOTAL' or 'BALANCE' lines (excluding subtotal / discount / items)
     if amount is None:
-        curr_matches = re.findall(r'(?:₹|INR|Rs\.?|\$)\s*([0-9,]+(?:\.[0-9]{1,2})?)', text, re.I)
-        if curr_matches:
-            for m in reversed(curr_matches):
-                try:
-                    val = float(m.replace(',', ''))
+        for i, line in enumerate(lines):
+            line_upper = line.upper()
+            if re.search(r'\bTOTAL\b|\bBALANCE\b', line_upper) and not re.search(r'\bSUB\s*TOTAL\b|\bSUBTOTAL\b|\bDISCOUNT\b|\bITEMS?\b|\bQTY\b', line_upper):
+                m = re.findall(num_pat, line)
+                if m:
+                    val = float(m[-1].replace(',', ''))
                     if val > 0:
                         amount = val
                         break
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1]
+                    m_next = re.findall(num_pat, next_line)
+                    if m_next and not any(k in next_line.upper() for k in ['DATE', 'INVOICE', 'GST', 'TAX', 'THANK']):
+                        val = float(m_next[-1].replace(',', ''))
+                        if val > 0:
+                            amount = val
+                            break
+
+    # Priority C: Scan all monetary amounts on the bill
+    # When receipts have column tables (where 'Total' label is separated), the final total is the maximum of the charges
+    if amount is None:
+        all_matches = re.findall(num_pat, cleaned_text)
+        if all_matches:
+            vals = []
+            for m in all_matches:
+                try:
+                    v = float(m.replace(',', ''))
+                    if v > 0:
+                        vals.append(v)
                 except ValueError:
                     pass
-
-    # Priority C: Scan lines from bottom up for numbers with decimals
-    if amount is None:
-        decimal_matches = re.findall(r'\b([0-9]{1,6}\.[0-9]{2})\b', text)
-        if decimal_matches:
-            try:
-                candidates = [float(x) for x in decimal_matches if float(x) > 0]
-                if candidates:
-                    amount = max(candidates)
-            except Exception:
-                pass
+            if vals:
+                # The final total is the maximum monetary sum on the bill (greater than each item rate / line item)
+                amount = max(vals)
 
     # 3. Extract Expense Date
-    dm = re.search(r'\b(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]20\d{2})\b', text)
+    dm = re.search(r'\b(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]20\d{2})\b', cleaned_text)
     date_val = dm.group(1).replace('.', '-') if dm else None
 
+    # Textual month support e.g. '20 Jan 2025' or 'Jan 20, 2025'
+    if not date_val:
+        from datetime import datetime
+        m1 = re.search(r'\b(\d{1,2})\s+([A-Za-z]{3,9})\s+(20\d{2})\b', cleaned_text)
+        if m1:
+            try:
+                d_str = f"{m1.group(1)} {m1.group(2)[:3]} {m1.group(3)}"
+                date_val = datetime.strptime(d_str, "%d %b %Y").strftime("%Y-%m-%d")
+            except Exception:
+                pass
+        else:
+            m2 = re.search(r'\b([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(20\d{2})\b', cleaned_text)
+            if m2:
+                try:
+                    d_str = f"{m2.group(2)} {m2.group(1)[:3]} {m2.group(3)}"
+                    date_val = datetime.strptime(d_str, "%d %b %Y").strftime("%Y-%m-%d")
+                except Exception:
+                    pass
+
     # 4. Classify Category
-    category = classify_category(text)
+    category = classify_category(cleaned_text)
 
     confidence = 0.9 if (amount is not None and date_val and vendor != "Unknown vendor") \
         else (0.7 if amount is not None else 0.3)

@@ -1,4 +1,4 @@
-﻿import BrandLogo from './BrandLogo.jsx';
+import BrandLogo from './BrandLogo.jsx';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { claims as initialClaims, auditEvents } from './mock';
 import { api } from './api';
@@ -538,7 +538,8 @@ const createClaim = async (formData) => {
       <Claims
         claims={role === 'Employee' ? claims.filter(c => c.person === userName) : claims}
         setSelected={setSelected}
-        onNewClaim={() => setNewClaimOpen(true)}
+        onNewClaim={role === 'Employee' ? () => setNewClaimOpen(true) : null}
+        role={role}
       />
     )}
 
@@ -601,7 +602,7 @@ const createClaim = async (formData) => {
   />
 )}
 
-{newClaimOpen && (
+{newClaimOpen && role === 'Employee' && (
   <NewClaimModal
     onClose={() => setNewClaimOpen(false)}
     onSubmit={createClaim}
@@ -1173,7 +1174,7 @@ function Status({ status }) {
             : 'submitted';
   return <span className={`status ${cls}`}><i></i>{status}</span>;
 }
-function Claims({ claims, setSelected, onNewClaim }) {
+function Claims({ claims, setSelected, onNewClaim, role }) {
   const [filter, setFilter] = useState('All');
 
   const filtered =
@@ -1185,13 +1186,15 @@ function Claims({ claims, setSelected, onNewClaim }) {
     <div className="panel full-panel">
       <div className="panel-head">
         <div>
-          <h2>All expense claims</h2>
-          <p>Review and track your submitted expenses</p>
+          <h2>{role === 'Manager' ? 'All employee expense claims' : 'My expense claims'}</h2>
+          <p>{role === 'Manager' ? 'Review and track all employee submitted expenses across your team' : 'Review and track your submitted expenses'}</p>
         </div>
 
-        <button className="primary-button" onClick={onNewClaim}>
-          ＋ New claim
-        </button>
+        {role === 'Employee' && onNewClaim && (
+          <button className="primary-button" onClick={onNewClaim}>
+            ＋ New claim
+          </button>
+        )}
       </div>
 
       <div className="filter-row">
